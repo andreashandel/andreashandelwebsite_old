@@ -1,0 +1,26 @@
+<footer class="site-footer">
+  {{ with site.GetPage "license.md" }}
+  <p class="powered-by">
+    {{ printf "<a href=\"%s\">%s <br> %s </a>" .RelPermalink .Title .LinkTitle  | safeHTML }}<br>
+  </p>
+  {{ end }}
+
+  <p class="powered-by">
+    {{ with site.Copyright }}{{ replace . "{year}" now.Year | markdownify}} &middot; {{ end }}
+
+    Created with <a href="https://github.com/rstudio/blogdown" target="_blank" rel="noopener">blogdown</a>, and the
+    <a href="https://wowchemy.com/" target="_blank" rel="noopener">Wowchemy theme</a> for
+    <a href="https://gohugo.io" target="_blank" rel="noopener">Hugo</a>. <br>
+	Lot's of inspiration and code snippets taken from <a href="https://alison.rbind.io/" target="_blank" rel="noopener">Alison Hill's website</a>. <a href="https://github.com/andreashandel/andreashandelwebsite" target="_blank" rel="noopener">GitHub repo.</a> 
+
+    {{ if ne .Type "docs" }}
+    <span class="float-right" aria-hidden="true">
+      <a href="#" id="back_to_top">
+        <span class="button_icon">
+          <i class="fas fa-chevron-up fa-2x"></i>
+        </span>
+      </a>
+    </span>
+    {{ end }}
+  </p>
+</footer>

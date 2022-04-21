@@ -1,0 +1,582 @@
+---
+title: Bayesian analysis of longitudinal multilevel data using brms and rethinking - part 3  
+summary: Part 3 of a tutorial showing how to fit Bayesian models using the `brms` package.
+author: Andreas Handel
+date: '2022-02-24'
+lastMod: "2022-04-18"
+slug: longitudinal-multilevel-bayesian-analysis-3
+categories: 
+- R
+- Data Analysis
+tags: 
+- R
+- Data Analysis
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+---
+
+
+
+<p><strong>This is work in progress!</strong></p>
+<p>This is part 3 of a tutorial illustrating how one can use the <code>brms</code> and <code>rethinking</code> R packages to perform a Bayesian analysis of longitudinal data using a multilevel/hierarchical/mixed-effects setup.</p>
+<p>I assume you’ve read both <a href="/posts/longitudinal-multilevel-bayesian-analysis-1/">part 1</a>, and <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/">part 2</a> otherwise this post won’t make much sense.</p>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In the previous post, I showed how to fit the data using the <code>rethinking</code> package. Now I’m re-doing it using <code>brms</code>. The <a href="https://paul-buerkner.github.io/brms/"><code>brms</code> package</a> is a widely used and very powerful tool to interface with Stan. It has overall more capabilities compared to <code>rethinking</code>. In my opinion, the main disadvantage is that it is often not as obvious how to go from mathematical model to code, unless one has a good bit of experience jumping between at times terse formula notation of <code>brms</code> and the model equations. I’m not there yet, so I currently prefer to start with <code>rethinking</code>. But since <code>brms</code> can do things that are not as easy (or impossible) with <code>rethinking</code>, it seems good to know how to use both.</p>
+<p>Also, comparing results using two different numerical packages is always good (even though both use <code>Stan</code> underneath, so in some sense those are not truly independent implementations).</p>
+<p>Again as previously, because fitting the models can take a good bit of time, I wrote separate <code>R</code> scripts for the fitting and the exploring parts. The code chunks from those scripts are shown below. The manual effort and slower pace of copying and pasting the code chunks from this tutorial and re-produce them can help in learning, but if you just want to get all the code from this post you can find it <a href="/posts/longitudinal-multilevel-bayesian-analysis-3/brmsfitmodels.R">here</a> and <a href="/posts/longitudinal-multilevel-bayesian-analysis-3/brmsexploremodels.R">here</a>.</p>
+</div>
+<div id="r-setup" class="section level1">
+<h1>R Setup</h1>
+<p>As always, make sure these packages are installed. <code>brms</code> uses the <a href="https://mc-stan.org/">Stan Bayesian modeling engine</a>. If you did the fitting with <code>rethinking</code> tutorial, you’ll have it already installed, otherwise you’ll need to install it. It is in my experience mostly seamless, but at times it seems to be tricky. I generally follow the instructions on the <a href="https://github.com/rmcelreath/rethinking"><code>rethinking</code> website</a> and it has so far always worked for me. It might need some fiddling, but you should be able to get them all to work.</p>
+<pre class="r"><code>library(&#39;dplyr&#39;) # for data manipulation
+library(&#39;ggplot2&#39;) # for plotting
+library(&#39;cmdstanr&#39;) #for model fitting
+library(&#39;brms&#39;) # for model fitting
+library(&#39;posterior&#39;) #for post-processing
+library(&#39;fs&#39;) #for file path</code></pre>
+</div>
+<div id="data-loading" class="section level1">
+<h1>Data loading</h1>
+<p>We’ll jump right in and load the data we generated in the previous tutorial.</p>
+<pre class="r"><code>simdat &lt;- readRDS(&quot;simdat.Rds&quot;)
+#pulling out number of observations
+Ntot = length(unique(simdat$m3$id))
+
+#fitting dataset 3
+#we need to make sure the id is coded as a factor variable
+#also removing anything in the dataframe that&#39;s not used for fitting
+#makes the Stan code more robust
+fitdat=list(id = as.factor(simdat[[3]]$id),
+            outcome = simdat[[3]]$outcome,
+            dose_adj = simdat[[3]]$dose_adj,
+            time = simdat[[3]]$time)</code></pre>
+</div>
+<div id="fitting-with-brms" class="section level1">
+<h1>Fitting with <code>brms</code></h1>
+<p>We’ll fit the different models we discussed in <a href="/posts/longitudinal-multilevel-bayesian-analysis-1/">part 1</a>, now using the <code>brms</code> package. The main function in that package, which does the fitting using Stan, is <code>brm</code>.</p>
+<p>First, we’ll specify each model. We’ll do that first, then run them all in a single loop.
+Since we determined when using <code>ulam</code>/<code>rethinking</code> that our model 2 was a bad model, and model 4 and 4a didn’t lead to much of a difference, I’m skipping those here and only do models 1, 2a, 3 and 4.</p>
+<div id="model-1" class="section level2">
+<h2>Model 1</h2>
+<p>The model with individual-level and dose-level effects, all priors fixed. This model has <span class="math inline">\(2N+2+1\)</span> parameters. <span class="math inline">\(N\)</span> each for the individual-level intercept for <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\beta\)</span>, one dose-level parameter for each, and 1 overall deviation, <span class="math inline">\(\sigma\)</span> for the outcome distribution.</p>
+<pre class="r"><code>#no-pooling model
+#separate intercept for each individual/id
+#2x(N+1)+1 parameters
+m1eqs &lt;- bf(  #main equation for time-series trajectory
+          outcome ~ exp(alpha)*log(time) - exp(beta)*time,
+          #equations for alpha and beta
+          alpha ~ 0 + id + dose_adj,
+          beta  ~ 0 + id + dose_adj,
+          nl = TRUE)
+
+# m1priors &lt;- c(#assign priors to all coefficients related to id and dose_adj for alpha and beta
+#               prior(normal(2, 10),  class = &quot;b&quot;,  nlpar = &quot;alpha&quot;),
+#               prior(normal(0.5, 10),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;),
+#               #change the dose_adj priors to something different than the id priors
+#               prior(normal(0.3, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
+#               prior(normal(-0.3, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;),
+#               prior(cauchy(0,1), class = &quot;sigma&quot;) )
+
+m1priors &lt;- c(prior(normal(0, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
+              prior(normal(0, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;)
+             )
+
+#x&lt;-get_prior(m1eqs,data=fitdat)
+#print(x)</code></pre>
+<p>Notice how this notation in <code>brms</code> looks quite a bit different than the mathematical equations or the <code>ulam</code> implementation. That’s a part I don’t particularly like about <code>brms</code>, the very condensed formula notation. It takes time getting used to and it always requires extra checking to ensure the model implemented in code corresponds to the mathematical model. One can check by looking at the priors and make sure they look as expected. We’ll do that below after we fit.</p>
+</div>
+<div id="model-2a" class="section level2">
+<h2>Model 2a</h2>
+<p>This is the easiest model, with only population level effects for intercept and dose, so only 2+2+1 parameters.</p>
+<pre class="r"><code>#full-pooling model
+#2+2+1 parameters
+m2aeqs &lt;- bf(  #main equation for time-series trajectory
+  outcome ~ exp(alpha)*log(time) - exp(beta)*time,
+  #equations for alpha and beta
+  alpha ~ 1 + dose_adj,
+  beta  ~  1 + dose_adj,
+  nl = TRUE)
+
+m2apriors &lt;- c(prior(normal(2, 2),  class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;Intercept&quot;),
+              prior(normal(0.5, 2),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;Intercept&quot;),
+              prior(normal(0.3, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
+              prior(normal(-0.3, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;),
+              prior(cauchy(0,1), class = &quot;sigma&quot;)  )</code></pre>
+</div>
+<div id="model-3" class="section level2">
+<h2>Model 3</h2>
+<p>This is the same as model 1 but with different values for the priors.</p>
+<pre class="r"><code>#same as model 1 but regularizing priors
+m3eqs &lt;- m1eqs
+
+m3priors &lt;- c(#assign priors to all coefficients related to id and dose_adj for alpha and beta
+  prior(normal(2, 1),  class = &quot;b&quot;,  nlpar = &quot;alpha&quot;),
+  prior(normal(0.5, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;),
+  #change the dose_adj priors to something different than the id priors
+  prior(normal(0.3, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
+  prior(normal(-0.3, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;),
+  prior(cauchy(0,1), class = &quot;sigma&quot;) )</code></pre>
+</div>
+<div id="model-4" class="section level2">
+<h2>Model 4</h2>
+<p>This is the adaptive-pooling multi-level model where priors are estimated.
+Here we have for each main parameter (<span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\beta\)</span>) an overall mean and standard deviation, and N individual intercepts, so 2 times 1+1+N. And of course we still have the 2 dose-related parameters and the overall standard deviation, so a total of 2*(1+1+N)+2+1 parameters.</p>
+<pre class="r"><code>#adaptive prior, partial-pooling model
+m4eqs &lt;- bf(  #main equation for time-series trajectory
+  outcome ~ exp(alpha)*log(time) - exp(beta)*time,
+  #equations for alpha and beta
+  alpha ~  (1|id) + dose_adj,
+  beta  ~  (1|id) + dose_adj,
+  nl = TRUE)
+
+m4priors &lt;- c(prior(normal(2, 1),  class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;Intercept&quot;),
+              prior(normal(0.5, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;Intercept&quot;),
+              prior(normal(0.3, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
+              prior(normal(-0.3, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;),
+              prior(cauchy(0,1), class = &quot;sd&quot;, nlpar = &quot;alpha&quot;),
+              prior(cauchy(0,1), class = &quot;sd&quot;, nlpar = &quot;beta&quot;),
+              prior(cauchy(0,1), class = &quot;sigma&quot;)  )</code></pre>
+</div>
+<div id="combine-models" class="section level2">
+<h2>Combine models</h2>
+<p>To make our lives easier below, we combine all models and priors into lists.</p>
+<pre class="r"><code>#stick all models into a list
+modellist = list(m1=m1eqs,m2a=m2aeqs,m3=m3eqs,m4=m4eqs)
+#also make list for priors
+priorlist = list(m1priors=m1priors,m2apriors=m2apriors,m3priors=m3priors,m4priors=m4priors)
+# set up a list in which we&#39;ll store our results
+fl = vector(mode = &quot;list&quot;, length = length(modellist))</code></pre>
+</div>
+<div id="fitting-setup" class="section level2">
+<h2>Fitting setup</h2>
+<p>We define some general values for the fitting. Since the starting values depend on number of chains, we need to do this setup first.</p>
+<pre class="r"><code>#general settings for fitting
+#you might want to adjust based on your computer
+warmup = 2000
+iter = warmup + floor(warmup/2)
+max_td = 12 #tree depth
+adapt_delta = 0.999
+chains = 5
+cores  = chains
+seed = 1234</code></pre>
+</div>
+<div id="setting-starting-values" class="section level2">
+<h2>Setting starting values</h2>
+<p>We’ll again set starting values, as we did for <code>ulam/rethinking</code>.
+Note that <code>brms</code> needs them in a somewhat different form, namely as list of lists for each model, one list for each chain.
+Ideally, one should set different values for each chain, and then check that each chain ends up at the same posterior. For simplicity, I’m not doing that here but instead I’m starting each chain with the same value.</p>
+<pre class="r"><code>## Setting starting values
+#starting values for model 1
+startm1 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), a1 = 0.5 , b1 = -0.5, sigma = 1)
+#starting values for model 2a
+startm2a = list(a0 = 2, b0 = 0.5, a1 = 0.5 , b1 = 0.5, sigma = 1)
+#starting values for model 3
+startm3 = startm1
+#starting values for models 4
+startm4 = list(mu_a = 2, sigma_a = 1, mu_b = 0, sigma_b = 1, a1 = 0.5 , b1 = -0.5, sigma = 1)
+#put different starting values in list
+#need to be in same order as models below
+#one list for each chain, thus a 3-leveled list structure
+startlist = list( rep(list(startm1),chains),
+                  rep(list(startm2a),chains),
+                  rep(list(startm3),chains),
+                  rep(list(startm4),chains)
+                  )</code></pre>
+</div>
+<div id="model-fitting" class="section level2">
+<h2>Model fitting</h2>
+<p>We’ll use the same strategy to loop though all models and fit them.
+The fitting code is pretty much the same as the previous one for <code>rethinking/ulam</code>, only now the fitting is done calling the <code>brm</code>.</p>
+<pre class="r"><code># fitting models
+#loop over all models and fit them using ulam
+for (n in 1:length(modellist))
+{
+
+  cat(&#39;************** \n&#39;)
+  cat(&#39;starting model&#39;, names(modellist[n]), &#39;\n&#39;)
+
+  tstart=proc.time(); #capture current time
+
+  fl[[n]]$fit &lt;- brm(formula = modellist[[n]],
+                   data = fitdat,
+                   family = gaussian(),
+                   prior = priorlist[[n]],
+                   init = startlist[[n]],
+                   control=list(adapt_delta=adapt_delta, max_treedepth = max_td),
+                   chains=chains, cores = cores,
+                   warmup = warmup, iter = iter,
+                   seed = seed,
+                   backend = &quot;cmdstanr&quot;
+  )# end brm statement
+
+  tend=proc.time(); #capture current time
+  tdiff=tend-tstart;
+  runtime_minutes=tdiff[[3]]/60;
+
+  cat(&#39;model fit took this many minutes:&#39;, runtime_minutes, &#39;\n&#39;)
+  cat(&#39;************** \n&#39;)
+
+  #add some more things to the fit object
+  fl[[n]]$runtime = runtime_minutes
+  fl[[n]]$model = names(modellist)[n]
+}
+# saving the results so we can use them later
+filepath = fs::path(&quot;D:&quot;,&quot;Dropbox&quot;,&quot;datafiles&quot;,&quot;longitudinalbayes&quot;,&quot;brmsfits&quot;, ext=&quot;Rds&quot;)
+saveRDS(fl,filepath)</code></pre>
+<p>You’ll likely find that model 1 takes the longest, the other ones run faster. You can check the runtime for each model by looking at <code>fl[[n]]$runtime</code>. It’s useful to first run with few iterations (100s instead of 1000s), make sure everything works in principle, then do a “final” long run with longer chains.</p>
+</div>
+</div>
+<div id="explore-model-fits" class="section level1">
+<h1>Explore model fits</h1>
+<pre class="r"><code>#loading previously saved fits.
+#useful if we don&#39;t want to re-fit each time
+#we want to explore the results.
+filepath = fs::path(&quot;D:&quot;,&quot;Dropbox&quot;,&quot;datafiles&quot;,&quot;longitudinalbayes&quot;,&quot;brmsfits&quot;, ext=&quot;Rds&quot;)
+fl &lt;- readRDS(filepath)</code></pre>
+<p>As was the case for <code>ulam/rethinking</code>, you can inspect the model fits by looking at traceplots using the <code>plot</code> function. You also get useful information using <code>summary</code>, e.g. <code>summary(fl[[1]]$fit)</code>. Again, explore your model fits carefully. Since those functions produce a lot of output, I’m skipping them again and go straight to something that produces outputs similar to those we got using the <code>precis</code> function in <code>rethinking</code>.</p>
+<p>We are using the <code>posterior</code> package for this, which is used to process results (i.e., posterior distributions) of a <code>brms</code> fit model. The <code>posterior</code> package replaces functionality that used to be part of <code>brms</code>, e.g., the <code>posterior_summary()</code> and <code>posterior_samples()</code> functions.</p>
+<div id="models-1-and-3" class="section level2">
+<h2>Models 1 and 3</h2>
+<p>Those are the same models, just with different priors. So we should expect the posterior to be similar.</p>
+<pre class="r"><code># model 1 first
+draws &lt;- posterior::as_draws_array(fl[[1]]$fit)
+pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
+a0mean &lt;- pars %&gt;% dplyr::filter(grepl(&#39;alpha_id&#39;,variable)) %&gt;% summarize(mean = mean(mean))
+b0mean &lt;- pars %&gt;% dplyr::filter(grepl(&#39;beta_id&#39;,variable)) %&gt;% summarize(mean = mean(mean))
+otherpars &lt;- pars %&gt;% dplyr::filter(!grepl(&#39;_id&#39;,variable))
+print(otherpars)</code></pre>
+<pre><code>## # A tibble: 5 x 10
+##   variable           mean   median     sd    mad       q5     q95  rhat ess_bulk
+##   &lt;chr&gt;             &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+## 1 b_alpha_dose_~  2.13e-1  1.96e-1 0.734  0.726    -1.03     1.49  1.05     102.
+## 2 b_beta_dose_a~ -2.19e-2 -1.03e-2 0.748  0.768    -1.33     1.15  1.04     108.
+## 3 sigma           9.74e-1  9.72e-1 0.0463 0.0457    0.900    1.05  1.01    1831.
+## 4 lprior         -1.59e+2 -1.58e+2 0.992  0.768  -161.    -158.    1.01     215.
+## 5 lp__           -5.26e+2 -5.25e+2 5.45   5.36   -535.    -517.    1.00    2145.
+## # ... with 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
+<pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
+<pre><code>## $mean
+## [1] 2.930814
+## 
+## $mean
+## [1] 1.000877</code></pre>
+<pre class="r"><code># repeat for model 3
+draws &lt;- posterior::as_draws_array(fl[[3]]$fit)
+pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
+a0mean &lt;- pars %&gt;% dplyr::filter(grepl(&#39;alpha_id&#39;,variable)) %&gt;% summarize(mean = mean(mean))
+b0mean &lt;- pars %&gt;% dplyr::filter(grepl(&#39;beta_id&#39;,variable)) %&gt;% summarize(mean = mean(mean))
+otherpars &lt;- pars %&gt;% dplyr::filter(!grepl(&#39;_id&#39;,variable))
+print(otherpars)</code></pre>
+<pre><code>## # A tibble: 5 x 10
+##   variable          mean   median     sd    mad       q5      q95  rhat ess_bulk
+##   &lt;chr&gt;            &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+## 1 b_alpha_dose~  9.27e-2  9.21e-2 0.109  0.110  -8.77e-2    0.270  1.00    2152.
+## 2 b_beta_dose_~ -2.57e-2 -2.46e-2 0.109  0.108  -2.08e-1    0.155  1.00    1920.
+## 3 sigma          9.73e-1  9.72e-1 0.0468 0.0466  8.99e-1    1.05   1.00    8874.
+## 4 lprior        -6.24e+1 -6.21e+1 1.02   0.730  -6.45e+1  -61.4    1.00    2620.
+## 5 lp__          -4.30e+2 -4.29e+2 5.67   5.58   -4.40e+2 -421.     1.00    3001.
+## # ... with 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
+<pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
+<pre><code>## $mean
+## [1] 2.953666
+## 
+## $mean
+## [1] 1.001361</code></pre>
+<p>Note the different naming of the parameters in <code>brms</code>. It’s unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have <code>dose</code> in their names are the ones we called <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> in our models. You can ignore the other entries.</p>
+<p>Some of the R-hat values for model 1 are not at 1, and the ESS (the effective sample size) is small. Model 1 also took long to run. That all indicates that the priors for model 3 are better.</p>
+<p>We can also compare the models as we did for <code>rethinking</code> using these lines of code:</p>
+<pre class="r"><code>comp &lt;- loo_compare(add_criterion(fl[[1]]$fit,&quot;waic&quot;),
+            add_criterion(fl[[3]]$fit,&quot;waic&quot;),
+            criterion = &quot;waic&quot;)</code></pre>
+<pre><code>## Warning: 
+## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.
+
+## Warning: 
+## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre class="r"><code>print(comp, simplify = FALSE)</code></pre>
+<pre><code>##                                    elpd_diff se_diff elpd_waic se_elpd_waic
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)    0.0       0.0  -393.5      11.5      
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   -0.4       0.2  -393.9      11.5      
+##                                    p_waic se_p_waic waic   se_waic
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   44.2    4.1     787.0   23.1 
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   44.5    4.1     787.8   23.1</code></pre>
+<p>We find that as for the <code>ulam</code> fits, the estimates for <span class="math inline">\(a_0\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(\sigma\)</span> are similar, but that’s not the case for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. The <span class="math inline">\(b_1\)</span> estimates are similar to those for <code>ulam</code> model 3, and not close to the true value. I’m not really sure what to make of that.</p>
+</div>
+<div id="comparison-with-the-truth-and-ulam" class="section level2">
+<h2>Comparison with the truth and <code>ulam</code></h2>
+<p>Since the models are the same as those we previously fit with <code>ulam</code>, only a different <code>R</code> package is used to run them, we should expect very similar results. That is indeed what we find, the parameter estimates are very similar. The same holds for model performance as measured by WAIC.</p>
+<p>That’s good, because we should expect that if we fit the same models, results should - up to numerical/sampling differences - be the same, no matter what software implementation we use. It also suggests that we did things right - or made the same mistake in both implementations! 😁.</p>
+</div>
+<div id="model-2a-1" class="section level2">
+<h2>Model 2a</h2>
+<p>This is the model with only population-level estimates.</p>
+<pre class="r"><code>draws &lt;- posterior::as_draws_array(fl[[2]]$fit)
+pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
+print(pars)</code></pre>
+<pre><code>## # A tibble: 7 x 10
+##   variable        mean   median      sd     mad       q5      q95  rhat ess_bulk
+##   &lt;chr&gt;          &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+## 1 b_alpha_In~  2.97e+0  2.97e+0 0.0208  0.0209   2.93e+0  3.00e+0  1.00    4569.
+## 2 b_alpha_do~  3.41e-2  3.40e-2 0.0108  0.0106   1.63e-2  5.21e-2  1.00    4656.
+## 3 b_beta_Int~  1.01e+0  1.01e+0 0.0184  0.0184   9.80e-1  1.04e+0  1.00    4580.
+## 4 b_beta_dos~ -5.20e-2 -5.21e-2 0.00965 0.00952 -6.78e-2 -3.59e-2  1.00    4405.
+## 5 sigma        7.02e+0  7.01e+0 0.315   0.315    6.52e+0  7.55e+0  1.00    5689.
+## 6 lprior      -9.65e+0 -9.64e+0 0.0877  0.0880  -9.79e+0 -9.50e+0  1.00    5693.
+## 7 lp__        -8.97e+2 -8.97e+2 1.58    1.44    -9.00e+2 -8.95e+2  1.00    3304.
+## # ... with 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
+<p>The parameters that have <code>_Intercept</code> in their name are what we called <span class="math inline">\(\mu_a\)</span> and <span class="math inline">\(\mu_b\)</span>, the onse containing <code>_dose</code> are our <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. We find pretty much the same results we found using <code>ulam</code>.</p>
+</div>
+<div id="model-4-1" class="section level2">
+<h2>Model 4</h2>
+<pre class="r"><code>draws &lt;- posterior::as_draws_array(fl[[4]]$fit)
+pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
+print(pars)</code></pre>
+<pre><code>## # A tibble: 105 x 10
+##    variable          mean  median      sd     mad      q5     q95  rhat ess_bulk
+##    &lt;chr&gt;            &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+##  1 b_alpha_Inter~  2.96    2.96   0.0192  0.0190   2.93    3.00    1.00    2286.
+##  2 b_alpha_dose_~  0.0378  0.0380 0.00968 0.00939  0.0218  0.0534  1.00    2812.
+##  3 b_beta_Interc~  1.01    1.01   0.0240  0.0236   0.968   1.05    1.00    2391.
+##  4 b_beta_dose_a~ -0.0488 -0.0488 0.0127  0.0123  -0.0700 -0.0278  1.00    2513.
+##  5 sd_id__alpha_~  0.0882  0.0865 0.0145  0.0138   0.0678  0.115   1.00    2543.
+##  6 sd_id__beta_I~  0.115   0.113  0.0190  0.0175   0.0880  0.150   1.00    2414.
+##  7 sigma           0.972   0.971  0.0472  0.0463   0.898   1.05    1.00    6807.
+##  8 r_id__alpha[1~  0.192   0.192  0.0333  0.0323   0.137   0.247   1.00    3027.
+##  9 r_id__alpha[2~  0.121   0.121  0.0335  0.0327   0.0667  0.176   1.00    3215.
+## 10 r_id__alpha[3~ -0.0396 -0.0393 0.0341  0.0332  -0.0960  0.0157  1.00    3246.
+## # ... with 95 more rows, and 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
+</div>
+<div id="comparing-all-models" class="section level2">
+<h2>Comparing all models</h2>
+<p>We can repeat the model comparison we did above, now including all 4 models.</p>
+<pre class="r"><code>comp &lt;- loo_compare(add_criterion(fl[[1]]$fit,&quot;waic&quot;),
+                    add_criterion(fl[[3]]$fit,&quot;waic&quot;),
+                    add_criterion(fl[[2]]$fit,&quot;waic&quot;),
+                    add_criterion(fl[[4]]$fit,&quot;waic&quot;),
+                    criterion = &quot;waic&quot;)</code></pre>
+<pre><code>## Warning: 
+## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.
+
+## Warning: 
+## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre><code>## Warning: 
+## 4 (1.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre><code>## Warning: 
+## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre class="r"><code>print(comp, simplify = FALSE)</code></pre>
+<pre><code>##                                    elpd_diff se_diff elpd_waic se_elpd_waic
+## add_criterion(fl[[4]]$fit, &quot;waic&quot;)    0.0       0.0  -393.4      11.7      
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   -0.1       1.1  -393.5      11.5      
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   -0.5       1.1  -393.9      11.5      
+## add_criterion(fl[[2]]$fit, &quot;waic&quot;) -501.0      23.6  -894.4      20.8      
+##                                    p_waic se_p_waic waic   se_waic
+## add_criterion(fl[[4]]$fit, &quot;waic&quot;)   44.0    4.1     786.7   23.3 
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   44.2    4.1     787.0   23.1 
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   44.5    4.1     787.8   23.1 
+## add_criterion(fl[[2]]$fit, &quot;waic&quot;)    9.8    2.8    1788.7   41.5</code></pre>
+</div>
+<div id="prior-exploration" class="section level2">
+<h2>Prior exploration</h2>
+<p>Since <code>brms</code> has a way of specifying the model and priors that makes direct mapping to the mathematical model a bit more opaque, it is useful to explore if the models we run are what we think we run. <code>brms</code> as two helpful functions for looking at priors. One can help set priors before fitting, the other shows priors after fitting.
+To make the output managable, we look at the simplest model, model 2. This looks as follows</p>
+<pre class="r"><code>preprior &lt;- get_prior(m1eqs,data=fitdat,family=gaussian())
+postprior &lt;- prior_summary(fl[[2]]$fit)
+print(preprior)</code></pre>
+<pre><code>##                prior class     coef group resp dpar nlpar lb ub       source
+##  student_t(3, 0, 22) sigma                                 0         default
+##               (flat)     b                          alpha            default
+##               (flat)     b dose_adj                 alpha       (vectorized)
+##               (flat)     b      id1                 alpha       (vectorized)
+##               (flat)     b     id10                 alpha       (vectorized)
+##               (flat)     b     id11                 alpha       (vectorized)
+##               (flat)     b     id12                 alpha       (vectorized)
+##               (flat)     b     id13                 alpha       (vectorized)
+##               (flat)     b     id14                 alpha       (vectorized)
+##               (flat)     b     id15                 alpha       (vectorized)
+##               (flat)     b     id16                 alpha       (vectorized)
+##               (flat)     b     id17                 alpha       (vectorized)
+##               (flat)     b     id18                 alpha       (vectorized)
+##               (flat)     b     id19                 alpha       (vectorized)
+##               (flat)     b      id2                 alpha       (vectorized)
+##               (flat)     b     id20                 alpha       (vectorized)
+##               (flat)     b     id21                 alpha       (vectorized)
+##               (flat)     b     id22                 alpha       (vectorized)
+##               (flat)     b     id23                 alpha       (vectorized)
+##               (flat)     b     id24                 alpha       (vectorized)
+##               (flat)     b      id3                 alpha       (vectorized)
+##               (flat)     b      id4                 alpha       (vectorized)
+##               (flat)     b      id5                 alpha       (vectorized)
+##               (flat)     b      id6                 alpha       (vectorized)
+##               (flat)     b      id7                 alpha       (vectorized)
+##               (flat)     b      id8                 alpha       (vectorized)
+##               (flat)     b      id9                 alpha       (vectorized)
+##               (flat)     b                           beta            default
+##               (flat)     b dose_adj                  beta       (vectorized)
+##               (flat)     b      id1                  beta       (vectorized)
+##               (flat)     b     id10                  beta       (vectorized)
+##               (flat)     b     id11                  beta       (vectorized)
+##               (flat)     b     id12                  beta       (vectorized)
+##               (flat)     b     id13                  beta       (vectorized)
+##               (flat)     b     id14                  beta       (vectorized)
+##               (flat)     b     id15                  beta       (vectorized)
+##               (flat)     b     id16                  beta       (vectorized)
+##               (flat)     b     id17                  beta       (vectorized)
+##               (flat)     b     id18                  beta       (vectorized)
+##               (flat)     b     id19                  beta       (vectorized)
+##               (flat)     b      id2                  beta       (vectorized)
+##               (flat)     b     id20                  beta       (vectorized)
+##               (flat)     b     id21                  beta       (vectorized)
+##               (flat)     b     id22                  beta       (vectorized)
+##               (flat)     b     id23                  beta       (vectorized)
+##               (flat)     b     id24                  beta       (vectorized)
+##               (flat)     b      id3                  beta       (vectorized)
+##               (flat)     b      id4                  beta       (vectorized)
+##               (flat)     b      id5                  beta       (vectorized)
+##               (flat)     b      id6                  beta       (vectorized)
+##               (flat)     b      id7                  beta       (vectorized)
+##               (flat)     b      id8                  beta       (vectorized)
+##               (flat)     b      id9                  beta       (vectorized)</code></pre>
+<pre class="r"><code>print(postprior)</code></pre>
+<pre><code>##            prior class      coef group resp dpar nlpar lb ub  source
+##           (flat)     b                           alpha       default
+##   normal(0.3, 1)     b  dose_adj                 alpha          user
+##     normal(2, 2)     b Intercept                 alpha          user
+##           (flat)     b                            beta       default
+##  normal(-0.3, 1)     b  dose_adj                  beta          user
+##   normal(0.5, 2)     b Intercept                  beta          user
+##     cauchy(0, 1) sigma                                  0       user</code></pre>
+<p>The first output shows the priors as the model sees them, before we apply any settings. It uses defaults. The second output shows the actual priors used when fitting the model, which are the ones we set.</p>
+</div>
+</div>
+<div id="computing-predictions" class="section level1">
+<h1>Computing predictions</h1>
+<p>Looking at tables of estimates as we did so far is somewhat useful, but nothing can beat graphical inspection. So let’s plot the predictions implied by the fits for the models. The general strategy for that is to use the parameter estimates in the posterior, put them in the model, and compute the predictions.
+While the <code>rethinking</code> package had <code>sim</code> and <code>link</code>, for <code>brms</code> those functions are <code>fitted</code> and <code>predict</code>.</p>
+<p>The code below produces predictions, both for the deterministic mean trajectory <span class="math inline">\(\mu\)</span>, and the actual outcome, <span class="math inline">\(Y\)</span>, which has added variation.</p>
+<pre class="r"><code>#this will contain all the predictions from the different models
+fitpred = vector(mode = &quot;list&quot;, length = length(fl))
+
+# load the data we used for fitting
+simdat &lt;- readRDS(&quot;simdat.Rds&quot;)
+#pull our the data set we used for fitting
+#if you fit a different one of the simulated datasets, change accordingly
+fitdat &lt;- simdat$m3
+#small data adjustment for plotting
+plotdat &lt;- fitdat %&gt;% data.frame() %&gt;% mutate(id = as.factor(id)) %&gt;% mutate(dose = dose_cat)
+
+
+# we are looping over each fitted model
+for (n in 1:length(fl))
+{
+  #get current model
+  nowmodel = fl[[n]]$fit
+
+  #make new data for which we want predictions
+  #specifically, more time points so the curves are smoother
+  timevec = seq(from = 0.1, to = max(fitdat$time), length=100)
+  Ntot = max(fitdat$id)
+  #data used for predictions
+  preddat = data.frame( id = sort(rep(seq(1,Ntot),length(timevec))),
+                        time = rep(timevec,Ntot),
+                        dose_adj = 0
+  )
+  #add right dose information for each individual
+  for (k in 1:Ntot)
+  {
+    #dose for a given individual
+    nowdose = unique(fitdat$dose_adj[fitdat$id == k])
+    nowdose_cat = unique(fitdat$dose_cat[fitdat$id == k])
+    #assign that dose
+    #the categorical values are just for plotting
+    preddat[(preddat$id == k),&quot;dose_adj&quot;] = nowdose
+    preddat[(preddat$id == k),&quot;dose_cat&quot;] = nowdose_cat
+  }
+
+  # estimate and CI for parameter variation
+  #brms equivalent to rethinking::link
+  #doing 89% CI
+  meanpred &lt;- fitted(nowmodel, newdata = preddat, probs = c(0.055, 0.945) )
+
+  # estimate and CI for prediction intervals
+  # the predictions factor in additional uncertainty around the mean (mu)
+  # as indicated by sigma
+  # this is equivalent to rethinking::sim()
+  outpred &lt;- predict(nowmodel, newdata = preddat, probs = c(0.055, 0.945) )
+
+
+  #place all predictions into a data frame
+  #and store in a list for each model
+  fitpred[[n]] = data.frame(id = as.factor(preddat$id),
+                            dose = as.factor(preddat$dose_cat),
+                            predtime = preddat$time,
+                            Estimate = meanpred[,&quot;Estimate&quot;],
+                            Q89lo = meanpred[,&quot;Q5.5&quot;],
+                            Q89hi = meanpred[,&quot;Q94.5&quot;],
+                            Qsimlo = outpred[,&quot;Q5.5&quot;],
+                            Qsimhi = outpred[,&quot;Q94.5&quot;]
+  )
+}
+
+
+#########################
+# generate plots showing data and model predictions
+#########################</code></pre>
+</div>
+<div id="creating-plots-of-the-results" class="section level1">
+<h1>Creating plots of the results</h1>
+<p>Now that we got the predictions computed, we can plot them and compare with the data.
+I’m showing the same uncertainty intervals I used for <code>rethinking</code> to make comparison easy.</p>
+<pre class="r"><code>#storing all plots
+plotlist = vector(mode = &quot;list&quot;, length = length(fl))
+
+#adding titles to plots
+titles = c(&#39;model 1&#39;,&#39;model 2a&#39;,&#39;model 3&#39;,&#39;model 4&#39;)
+
+#again looping over all models, making a plot for each
+for (n in 1:length(fl))
+{
+  # ===============================================
+  plotlist[[n]] &lt;- ggplot(data = fitpred[[n]], aes(x = predtime, y = Estimate, group = id, color = dose ) ) +
+    geom_line() +
+    geom_ribbon(aes(x=predtime, ymin=Q89lo, ymax=Q89hi, fill = dose, color = NULL), alpha=0.3, show.legend = F) +
+    geom_ribbon(aes(x=predtime, ymin=Qsimlo, ymax=Qsimhi, fill = dose, color = NULL), alpha=0.1, show.legend = F) +
+    geom_point(data = plotdat, aes(x = time, y = outcome, group = id, color = dose), shape = 1, size = 2) +
+    scale_y_continuous(limits = c(-30,50)) +
+    labs(y = &quot;Virus load&quot;,
+         x = &quot;days post infection&quot;) +
+    theme_minimal() +
+    ggtitle(titles[n])
+  ggsave(file = paste0(titles[n],&quot;.png&quot;), plotlist[[n]], dpi = 300, units = &quot;in&quot;, width = 7, height = 7)
+}
+
+
+
+#########################
+# show the plots
+#########################</code></pre>
+</div>
+<div id="showing-the-plots" class="section level1">
+<h1>Showing the plots</h1>
+<p>Here are the plots for all models we considered.</p>
+<p>It’s a bit hard to see, but each plot contains for each individual the data as symbols, the estimated mean as line, and the 89% credible interval and prediction interval as shaded areas.</p>
+<pre class="r"><code>plot(plotlist[[1]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-1.png" width="672" /></p>
+<pre class="r"><code>plot(plotlist[[3]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-2.png" width="672" /></p>
+<pre class="r"><code>plot(plotlist[[2]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-3.png" width="672" /></p>
+<pre class="r"><code>plot(plotlist[[4]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-4.png" width="672" /></p>
+<p>The figures reflect what we found above numerically.</p>
+<!-- Mirroring the findings from above, the models are very similar. In fact, it's hard to tell any difference by just looking at the plots (but they are slightly different, I checked).  So overall, the figures make sense and indicates that apart from models 2/2a, the other models are performing well. I consider model 4/4a the most suitable one. But now looking at these figures and seeing the nice matches between data and models, I'm still a bit puzzled by the fact that $a_1$ and $b_1$ are not that well estimated... -->
+</div>
+<div id="summary-and-continuation" class="section level1">
+<h1>Summary and continuation</h1>
+<p>To sum it up, we repeated our previous fitting, now using the <code>brms</code> package instead of <code>rethinking</code>. While the two packages have different syntax, the models we fit are the same and thus the results are very close too. That’s comforting. If one approach had produced very different results, it would have meant something was wrong. Of course, as I was writing this series of posts, that happened many times and it took me a while to figure out how to get <code>brms</code> to do what I wanted it to 😁.</p>
+<p>I like the approach of using both packages. It adds an extra layer of robustness. The <code>rethinking</code> code is very close to the math and thus quickly implemented and probably a good first step. <code>brms</code> has some features that go beyond what <code>rethinking</code> can (easily) do, so moving on to re-implementing models in <code>brms</code> and using that code for producing the final results can make sense.</p>
+<p>This ends the main part of the tutorial (for now). There were several topics I wanted to discuss that didn’t fit here. If you are interested in some further musings, you can hop to <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/">this post</a>, where I discuss a few further topics and variations.</p>
+</div>

@@ -1,0 +1,328 @@
+---
+title: Bayesian analysis of longitudinal multilevel data using brms and rethinking - part 2  
+summary: Part 2 of a tutorial showing how to fit Bayesian models using the `rethinking` package.
+author: Andreas Handel
+date: '2022-02-23'
+lastMod: "2022-04-01"
+slug: longitudinal-multilevel-bayesian-analysis-2
+categories: 
+- R
+- Data Analysis
+tags: 
+- R
+- Data Analysis
+- Bayesian
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+---
+
+```{r setup, include=FALSE}
+library(emoji)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE, cache=FALSE}
+knitr::read_chunk('ulamfitmodels.R')
+knitr::read_chunk('ulamexploremodels.R')
+```
+
+
+
+This is part two of a tutorial illustrating how to perform a Bayesian analysis of longitudinal data using a multilevel/hierarchical/mixed-effects setup. In this part, we'll fit the simulated data using the `rethinking` package.
+
+I assume you've read [part 1](/posts/longitudinal-multilevel-bayesian-analysis-1/), otherwise this post won't make much sense. You might even want to open that first part post in a separate tab for quick comparison.
+
+
+# Introduction
+
+In the previous post, I showed a setup where some continuous outcome data (in our case, virus load) was collected over time for several individuals. Those individuals differed by some characteristic (in our case, dose at which they got infected). I specified several models that are useful for both fitting the data, and creating simulations. We've done the simulating part, now we'll start fitting models to that data. 
+
+The advantage of fitting to simulated data is of course that we know exactly what model and what parameters produced the data, so we can compare our model estimates to the truth to see how our models perform. It is always good to do that to get some confidence that your models make sense, before you apply them to real data - where you don't know what the truth is, so you have to trust whatever your model tells you.
+
+Fitting the models can take a good bit of time (hours, depending on the settings for the fitting routine). It is generally advisable to place code that takes a while into its own `R` script, run that script and then save the results for further processing. This is in fact what I did here. I wrote 2 separate R scripts, one that does the fitting and one that does the exploration of the model fits. The code shown below comes from those 2 scripts. There is some value in re-coding yourself by copying and pasting the code chunks from this tutorial, but if you just want to get all the code from this post you can find it [here](/posts/longitudinal-multilevel-bayesian-analysis-2/ulamfitmodels.R) and [here](/posts/longitudinal-multilevel-bayesian-analysis-2/ulamexploremodels.R).
+
+
+# R Setup
+
+As always, make sure these packages are installed. Since `rethinking` uses the [Stan Bayesian modeling engine](https://mc-stan.org/), you need to install it too. It is in my experience mostly seamless, but at times it seems to be tricky. I generally follow the instructions on the [`rethinking` website](https://github.com/rmcelreath/rethinking) and it has so far always worked for me. It might need some fiddling, but you should be able to get them all to work.
+
+
+```{r, packages, message = FALSE, warning = FALSE}
+```
+
+
+
+# Data loading
+
+We'll jump right in and load the data we generated in the previous tutorial.
+
+
+```{r, data}
+```
+
+# Fitting with rethinking
+
+We'll start by fitting the different models we discussed in [part 1](/posts/longitudinal-multilevel-bayesian-analysis-1/) using the `rethinking` package. The main function in that package, which does the fitting using [Stan](https://mc-stan.org/), is `ulam`. 
+
+First, we'll specify each model, then we'll run them all in a single loop.
+
+
+## Model 1
+
+These lines of code specify the full set of equations for our model 1. Note how closely the R code resembles the mathematical notation. That close match between math and code is one of the nice features of `rethinking`/`ulam`. Also note the indexing of the parameters `a0` and `b0` by `id`, which indicates that each individual has their own values.
+
+
+```{r, model-1}
+```
+
+You might have noticed that I chose some of the values in the priors to be different than the values we used to generate the simulated data. I don't want to make things too easy for the fitting routine `r emoji::emoji('grin')`. We want to have the fitting routine "find" the right answer (parameter estimates). Hopefully, even if we don't start at the right values, we'll end up there.
+
+
+## Model 2 
+
+Now we'll set up model 2 exactly as for model 1 but with some of the priors changed as discussed previously. 
+
+```{r, model-2}
+```
+
+
+## Model 3
+
+This is the same as model 1 but with different values for the priors.
+
+
+```{r, model-3}
+```
+
+
+## Model 4
+
+For this model, we specify a few extra distributions.
+
+
+```{r, model-4}
+```
+
+
+
+## Model 2 and 4 alternatives
+
+There are two model alternatives I also want to consider. The first one is a version of model 2 that gets rid of individual-level parameters and instead has only population-level parameters. I discussed this model in part 1 and called it 2a there. Here is the model definition
+
+
+```{r, model-2a}
+```
+
+Note that `a0` and `b0` are not indexed by `id` anymore and are now single numbers, instead of $N$ values as before.
+
+
+I want to mention one more model. This is in fact the same model as model 4, but written in a different way. A potential problem with model 4 and similar models is that parameters inside parameters can lead to inefficient or unreliable numerical results when running your Monte Carlo routine (in our case, this is Stan-powered Hamilton Monte Carlo). It is possible to rewrite the model such that it is the same model, but it looks different in a way that makes the numerics often run better. It turns out for our example, model 4 above runs ok. But it's a good idea to be aware of the fact that one can re-write models if needed, therefore I decided to include this model alternative here. 
+
+The above model is called a **centered** model and the re-write is called a **non-centered** model. The trick is to pull out the parameters from inside the distributions for $a_{0,i}$ and $b_{0,i}$. The non-centered model looks like this:
+
+
+
+```{r, model-4a}
+```
+
+Again, this model is mathematically the same as the original model 4. If this is confusing and doesn't make sense (it sure wouldn't to me if I just saw that for the first time `r emoji::emoji('grin')`), check the [Statistical Rethinking book](https://xcelab.net/rm/statistical-rethinking/). (And no, I do not get a commission for continuing to point you to the book, and I wish there was a free online version (or a cheap paperback). But it is a great book and if you want to learn this kind of modeling for real, I think it's worth the investment.) 
+
+
+
+## Setting starting values
+
+Any fitting routine needs to start with some parameter values and then from there tries to improve. `Stan` uses a heuristic way of picking some starting values. Often that works, sometimes it fails initially but then the routine fixes itself, and sometimes it fails all the way. In either case, I find it a good idea to specify starting values, even if they are not strictly needed. And it's good to know that this is possible and how to do it, just in case you need it at some point. Setting starting values gives you more control, and you also know exactly what should happen when you look at for instance the traceplots of the chains. 
+
+
+```{r, startvalues}
+```
+
+
+Note that we only specify values for the parameters that are directly estimated. Parameters that are built from other parameters (e.g. $\alpha$ and $\beta$) are computed and don't need starting values.
+
+For some more detailed discussion on starting values, see for instance [this post by Solomon Kurz](https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/
+). He uses `brms` in his example, but the same idea applies with any package/fitting routine. He also explains that it is a good idea to set different starting values for each chain. I don't do that here for simplicity, but I agree it's a good idea in general.
+
+
+
+## Model fitting
+
+Now that we specified all models, we can loop through all models and fit them. 
+
+In this example, I'm fitting the data that was generated by model 3 since it shows the most realistic pattern. You can try to fit to the other 2 datasets and see what you find. It is not necessarily the case that the model that produced a certain dataset is also the one that fits it best.
+
+First, some setup before the actual fitting loop.
+
+```{r, fittingsetup}
+```
+
+
+The first code block defines various settings for the `ulam` function. Look at the help file for details. Then we place all models into a list, set up an empty list for our fit results, and specify the data needed for fitting. The final command enforces some constraints on parameters. For our model, we want Half-Cauchy distributions for all variance parameters to ensure they are positive. Above, I specified them as Cauchy. There is no direct Half-Cauchy implementation, but the way one achieves one is to tell `ulam`/`Stan` that the values for those parameters need to be positive. That's what the `constraints` line in the code below does.
+
+
+Looping over each model and fitting it:
+
+```{r, modelfitting, eval = FALSE}
+```
+
+In addition to the actual fitting call to `ulam`, I'm also printing a few messages and storing the model name and duration it too to run. That's useful for diagnostic. It's generally a good idea to do short runs until things work, then do a large run to get the actual result. Recording the running time helps decide how long a real run can be and how long it might take.
+
+
+# Explore model fits
+
+```{r, loadfits}
+```
+
+All fits are in the list called `fl`. For each model the actual fit is in `fit`, the model name in `model` and the run time in `runtime`.
+
+You should explore your model fits carefully. Look at the trace-plots or trank-plots with the `traceplot()` and `trankplot()` functions in `rethinking` by running `trankplots(fl[[1]]$fit)`, etc. Make sure the chains are looking ok. You can also use the `summary` function to get some useful information on our model. It's worth exploring that. I'm skipping those here since they take a lot of space, but do explore them. It's important to be confident the fit worked.
+
+What I'll do here is use the `precis` function from `rethinking` to look at all parameters for different models. 
+
+
+## Models 1 and 3
+
+Let's start by comparing fits for models 1 and 3. We start with those two because they are essentially the same model, with the only difference being wider priors for the individual-level parameters in model 1. 
+
+It is worth mentioning that when running the fitting routine, model 1 takes much longer to fit than model 3. The wide priors made the fitting efficiency poor. But let's see how it impacts the results.
+
+Instead of printing all the $N$ different values of $a_{0,i}$ and $b_{0,i}$, I compute their means. If you want to see them all, change to `depth=2` in the `precis` function.
+
+
+```{r mod_1_3_exploration}
+```
+
+The models seem to have converged ok, based on `Rhat` values of 1. Some parameters sampled better than others, as can be seen by the varying `n_eff` values. I used `r chains` chains of `r iter-warmup` post-warmup samples for each chain, so the actual samples are `r chains * (iter-warmup)`. If `n_eff` is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it's possible to get more effective samples than actual samples.)
+
+We find that estimates for $a_{0}$, $b_0$ and $\sigma$ are similar, $a_1$ and $b_1$ differ more.  
+
+Note that the only thing we changed between models 1 and 3 are to make the priors for the $a_{0,i}$ and $b_{0,i}$ parameters tighter. It didn't seem to impact their estimates, but somehow it impacted the estimates and credible intervals for parameters $a_1$ and $b_1$. I'm not fully sure what to make of that, as of writing this, I'm still trying to full figure out what that means and what's going on. `r emoji::emoji('shrug')`.
+
+We can also use the `compare` function to see how these models differ.
+
+
+
+```{r, mod_1_3_comparison}
+```
+
+I'm not going to discuss things in detail (see [Statistical Rethinking](https://xcelab.net/rm/statistical-rethinking/)), but a lower WAIC means a model that fits best in the sense that it strikes a good balance between fitting the data while not overfitting. As you can see, models 1 and 3 perform very similarly.
+
+
+
+## Comparing model estimates with the truth
+
+Before we move on, let's reflect on the truth, i.e. the actual values of the parameters, which we know here since we created/simulated the data. To generate the data, we used these parameter values. $\sigma =$ `r simdat$m3pars['sigma']`, $\mu_a =$ `r simdat$m3pars['a0_mu']`, $\mu_b =$ `r simdat$m3pars['b0_mu']`, $a_1 =$ `r simdat$m3pars['a1']`, $b_1 =$ `r simdat$m3pars['b1']`. We also said that our main scientific question is if there is a dose effect, i.e. non-zero $a_1$ and $b_1$. 
+
+The models find estimates of $\mu_a$, $\mu_b$  and $\sigma$ that are close to what we used. The models also estimate $a_1$ centered around a positive value and $b_1$ on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models and the data we have, we aren't able to convincingly determine that there is an impact of dose on outcome.
+
+
+## Models 2 and 2a
+
+Next, let's look at models 2 and 2a. The estimates should be similar since the two models are conceptually pretty much the same.
+
+```{r mod_2_2a_exploration}
+```
+
+The first thing to note is that model 2 performs awfully, with high `Rhat` values and very low effective sample size `n_eff`. This indicates that this model doesn't work well for the data and we should also take the estimated values not too seriously. However, pretending for a while that we can take them seriously, here is what we find.
+
+First, both models produce similar estimates. Since model 2a is simpler and doesn't have that strange feature of us enforcing a very tight distribution for the $a_{0,i}$ and $b_{0,i}$ parameters, it actually samples much better, see the higher `n_eff` numbers. 
+
+Both models do a very poor job estimating $\sigma$. That's because we don't allow the models to have the flexibility needed to fit the data, so it has to account for any variation between its estimated mean trajectory and the real data by making $\sigma$ large.
+
+Since both models are more constrained, they produce estimates for $a_1$ and $b_1$ that are tighter. However, their WAIC is much larger than models 1 and 3, indicating either very strong overfitting or underfitting. In this case, it's underfitting. The models are not flexible enough to capture the individual-level variation. If we did indeed not want to account for individual-level variation, we should go with a model that simply doesn't include it, i.e. model 2a. The contrived model 2 with very narrow priors is simply a bad model, and I'm really only exploring it here for demonstration purposes.
+
+
+
+
+## Models 4 and 4a
+
+Now we get to the models we really care about. When I set up the models, I suggested that model 4 was similar to models 1-3, but with priors adaptively chosen. That didn't apply during data generation/simulation since in that step, we always need to manually choose values. But during the fitting/estimation, we should expect that model 4 chooses priors in a smart way, such that it is better than the models where we fixed the priors. Let's see what model 4 produces. We also look at model 4a, which is exactly the same model, just rewritten to potentially make the numerical fitting routine more efficient.
+
+```{r mod_4_4a_exploration}
+```
+
+As you can see, up to numerical sampling variability, the results for models 4 and 4a are pretty much the same. But note the different values for `n_eff`, suggesting that each model formulation had advantages in sampling for some of the parameters.
+
+If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true $\mu_a$, $\mu_b$ and $\sigma$ are estimated fairly well. Estimates for $a_1$ and $b_1$ are lower, but the credible intervals are less wide, such that those estimates are now reliably positive/negative. 
+
+Now let's briefly run the `compare` function too and include model 3 as well:
+
+```{r mod_4_4a_comparison}
+```
+
+We do find that model 4/4a performs a bit better. Note that model 4 has more actual parameters, but the effective parameters (which is described by `pWAIC`) is smaller. Models 4 and 4a also run much faster during fitting.
+
+Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely. We still don't yet retrieve the values we used to simulate the data. At this point, it's not clear to me if with more sampling we could get there, or if our fairly low $N$ value doesn't allow better estimation (that doesn't seem to be the case, see my explorations of simulated data with larger $N$ in [part 4](/posts/longitudinal-multilevel-bayesian-analysis-4/)). I am a bit stumped by the fact that not even the credible intervals for $a_1$ and $b_1$ contain the true values for these parameters. My current best guess is that there is still some parameter degeneracy/overfitting, i.e. there are too many parameters to estimate and the fact that we gave each individual their own $a_{0,i}$ and $b_{0,i}$ let to those parameters "absorbing" some of the dose-dependent signal in $a_1$ and $b_1$. But I'm not fully sure that explanation is right. I need to dig into that a bit more (feedback appreciated).
+
+
+
+
+# Computing predictions
+
+Looking at tables of estimates as we did so far is somewhat useful, but I generally prefer looking at plots. So let's plot the predictions implied by the fits for the models. The general strategy for that is to use the parameter estimates in the posterior, put them in the model, and compute the predictions. The `rethinking` package has some helper functions for that (`sim` and `link`). 
+
+The code below produces predictions, both for the deterministic mean trajectory $\mu$, and the actual outcome, $Y$, which has added variation.
+
+
+```{r computepredictions}
+```
+
+
+# Creating plots of the results
+
+Now that we got the predictions computed, we can plot them and compare to the data.
+It turns out that trying to plot all the different credible intervals makes the plot too busy, so I'm only showing a few.
+You can play around by turning the commented lines on.
+
+```{r, makeplots, warning = FALSE, message = FALSE}
+```
+
+
+# Showing the plots 
+
+Here are the plots for all models we considered.
+I'm plotting them in the order I discussed the models above, so the ones we compared above are shown right below each other.
+
+It's a bit hard to see, but each plot contains for each individual the data as symbols, the estimated mean as line, and the 89% credible interval and prediction interval as shaded areas.
+
+## Models 1 and 3
+
+```{r, mod_1_3_plots, warning=FALSE}
+```
+
+Mirroring the findings from above, the models are very similar. In fact, it's hard to tell any difference by just looking at the plots (but they are slightly different, I checked). 
+
+
+## Models 2 and 2a
+
+For models 2 and 2a, recall that the only variation is for dose, we didn't allow variation among individuals. That's reflected in the plots. The credible intervals based on parameters are tight, but because the variability, $\sigma$, had to account for all the differences, the prediction intervals are very wide.
+
+
+```{r, mod_2_2a_plots, warning=FALSE}
+```
+
+## Models 4 and 4a
+
+These models look good again, and very similar to models 1 and 3.
+
+```{r, mod_4_4a_plots, warning=FALSE}
+```
+
+
+So overall, the figures make sense and indicates that apart from models 2/2a, the other models are performing well. I consider model 4/4a the most suitable one. But now looking at these figures and seeing the nice matches between data and models, I'm still a bit puzzled by the fact that $a_1$ and $b_1$ are not that well estimated...
+
+
+
+# Summary and continuation
+
+To sum it up, we fit several models to the simulated time-series data to explore how different model formulations might or might not impact results. For this post, I used the - very nice! - `rethinking` package. In the next post, I'll repeat the fitting again, now using `brms`. Since `brms` is very widely used and has some capabilities that go beyond what `rethinking` can do, I think it's worth [reading the next post](/posts/longitudinal-multilevel-bayesian-analysis-3/).
+
+If you don't care about `brms`, you can hop to [this post](/posts/longitudinal-multilevel-bayesian-analysis-4/), where I discuss a few further topics and variations. Any fitting done in that post is with `ulam`/`rethinking`, so you don't need to look at the `brms` post, but I still suggest you do `r emoji::emoji('grin')`.
+ 
+
+
+
+

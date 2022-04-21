@@ -1,0 +1,549 @@
+---
+title: Bayesian analysis of longitudinal multilevel data using brms and rethinking - part 2  
+summary: Part 2 of a tutorial showing how to fit Bayesian models using the `rethinking` package.
+author: Andreas Handel
+date: '2022-02-23'
+lastMod: "2022-04-01"
+slug: longitudinal-multilevel-bayesian-analysis-2
+categories: 
+- R
+- Data Analysis
+tags: 
+- R
+- Data Analysis
+- Bayesian
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+---
+
+
+
+<p>This is part two of a tutorial illustrating how to perform a Bayesian analysis of longitudinal data using a multilevel/hierarchical/mixed-effects setup. In this part, we’ll fit the simulated data using the <code>rethinking</code> package.</p>
+<p>I assume you’ve read <a href="/posts/longitudinal-multilevel-bayesian-analysis-1/">part 1</a>, otherwise this post won’t make much sense. You might even want to open that first part post in a separate tab for quick comparison.</p>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In the previous post, I showed a setup where some continuous outcome data (in our case, virus load) was collected over time for several individuals. Those individuals differed by some characteristic (in our case, dose at which they got infected). I specified several models that are useful for both fitting the data, and creating simulations. We’ve done the simulating part, now we’ll start fitting models to that data.</p>
+<p>The advantage of fitting to simulated data is of course that we know exactly what model and what parameters produced the data, so we can compare our model estimates to the truth to see how our models perform. It is always good to do that to get some confidence that your models make sense, before you apply them to real data - where you don’t know what the truth is, so you have to trust whatever your model tells you.</p>
+<p>Fitting the models can take a good bit of time (hours, depending on the settings for the fitting routine). It is generally advisable to place code that takes a while into its own <code>R</code> script, run that script and then save the results for further processing. This is in fact what I did here. I wrote 2 separate R scripts, one that does the fitting and one that does the exploration of the model fits. The code shown below comes from those 2 scripts. There is some value in re-coding yourself by copying and pasting the code chunks from this tutorial, but if you just want to get all the code from this post you can find it <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/ulamfitmodels.R">here</a> and <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/ulamexploremodels.R">here</a>.</p>
+</div>
+<div id="r-setup" class="section level1">
+<h1>R Setup</h1>
+<p>As always, make sure these packages are installed. Since <code>rethinking</code> uses the <a href="https://mc-stan.org/">Stan Bayesian modeling engine</a>, you need to install it too. It is in my experience mostly seamless, but at times it seems to be tricky. I generally follow the instructions on the <a href="https://github.com/rmcelreath/rethinking"><code>rethinking</code> website</a> and it has so far always worked for me. It might need some fiddling, but you should be able to get them all to work.</p>
+<pre class="r"><code>library(&#39;dplyr&#39;) # for data manipulation
+library(&#39;ggplot2&#39;) # for plotting
+library(&#39;cmdstanr&#39;) #for model fitting
+library(&#39;rethinking&#39;) #for model fitting
+library(&#39;fs&#39;) #for file path</code></pre>
+</div>
+<div id="data-loading" class="section level1">
+<h1>Data loading</h1>
+<p>We’ll jump right in and load the data we generated in the previous tutorial.</p>
+<pre class="r"><code>simdat &lt;- readRDS(&quot;simdat.Rds&quot;)
+#pulling out number of observations
+Ntot = length(unique(simdat$m3$id))</code></pre>
+</div>
+<div id="fitting-with-rethinking" class="section level1">
+<h1>Fitting with rethinking</h1>
+<p>We’ll start by fitting the different models we discussed in <a href="/posts/longitudinal-multilevel-bayesian-analysis-1/">part 1</a> using the <code>rethinking</code> package. The main function in that package, which does the fitting using <a href="https://mc-stan.org/">Stan</a>, is <code>ulam</code>.</p>
+<p>First, we’ll specify each model, then we’ll run them all in a single loop.</p>
+<div id="model-1" class="section level2">
+<h2>Model 1</h2>
+<p>These lines of code specify the full set of equations for our model 1. Note how closely the R code resembles the mathematical notation. That close match between math and code is one of the nice features of <code>rethinking</code>/<code>ulam</code>. Also note the indexing of the parameters <code>a0</code> and <code>b0</code> by <code>id</code>, which indicates that each individual has their own values.</p>
+<pre class="r"><code>#wide-prior, no-pooling model
+#separate intercept for each individual/id
+#2x(N+1)+1 parameters
+m1 &lt;- alist(
+  # distribution of outcome
+  outcome ~ dnorm(mu, sigma),
+
+  # main equation for time-series trajectory
+  mu &lt;- exp(alpha)*log(time) - exp(beta)*time,
+
+  #equations for alpha and beta
+  alpha &lt;-  a0[id] + a1*dose_adj,
+  beta &lt;-  b0[id] + b1*dose_adj,
+
+  #priors
+  a0[id] ~ dnorm(2,  10),
+  b0[id] ~ dnorm(0.5, 10),
+
+  a1 ~ dnorm(0.3, 1),
+  b1 ~ dnorm(-0.3, 1),
+  sigma ~ cauchy(0,1)
+)</code></pre>
+<p>You might have noticed that I chose some of the values in the priors to be different than the values we used to generate the simulated data. I don’t want to make things too easy for the fitting routine 😁. We want to have the fitting routine “find” the right answer (parameter estimates). Hopefully, even if we don’t start at the right values, we’ll end up there.</p>
+</div>
+<div id="model-2" class="section level2">
+<h2>Model 2</h2>
+<p>Now we’ll set up model 2 exactly as for model 1 but with some of the priors changed as discussed previously.</p>
+<pre class="r"><code>#narrow-prior, full-pooling model
+#2x(N+2)+1 parameters
+m2 &lt;- alist(
+  outcome ~ dnorm(mu, sigma),
+  mu &lt;- exp(alpha)*log(time) - exp(beta)*time,
+  alpha &lt;-  a0[id] + a1*dose_adj,
+  beta &lt;-  b0[id] + b1*dose_adj,
+  a0[id] ~ dnorm(mu_a,  0.0001),
+  b0[id] ~ dnorm(mu_b, 0.0001),
+  mu_a ~ dnorm(2, 1),
+  mu_b ~ dnorm(0.5, 1),
+  a1 ~ dnorm(0.3, 1),
+  b1 ~ dnorm(-0.3, 1),
+  sigma ~ cauchy(0,1)
+)</code></pre>
+</div>
+<div id="model-3" class="section level2">
+<h2>Model 3</h2>
+<p>This is the same as model 1 but with different values for the priors.</p>
+<pre class="r"><code>#regularizing prior, partial-pooling model
+m3 &lt;- alist(
+  outcome ~ dnorm(mu, sigma),
+  mu &lt;- exp(alpha)*log(time) - exp(beta)*time,
+  alpha &lt;-  a0[id] + a1*dose_adj,
+  beta &lt;-  b0[id] + b1*dose_adj,
+  a0[id] ~ dnorm(2,  1),
+  b0[id] ~ dnorm(0.5, 1),
+  a1 ~ dnorm(0.3, 1),
+  b1 ~ dnorm(-0.3, 1),
+  sigma ~ cauchy(0,1)
+)</code></pre>
+</div>
+<div id="model-4" class="section level2">
+<h2>Model 4</h2>
+<p>For this model, we specify a few extra distributions.</p>
+<pre class="r"><code>#adaptive priors, partial-pooling model
+#2x(N+2)+1 parameters
+m4 &lt;- alist(
+  outcome ~ dnorm(mu, sigma),
+  mu &lt;- exp(alpha)*log(time) - exp(beta)*time,
+  alpha &lt;-  a0[id] + a1*dose_adj,
+  beta &lt;-  b0[id] + b1*dose_adj,
+  a0[id] ~ dnorm(mu_a,  sigma_a),
+  b0[id] ~ dnorm(mu_b, sigma_b),
+  mu_a ~ dnorm(2, 1),
+  mu_b ~ dnorm(0.5, 1),
+  sigma_a ~ cauchy(0, 1),
+  sigma_b ~ cauchy(0, 1),
+  a1 ~ dnorm(0.3, 1),
+  b1 ~ dnorm(-0.3, 1),
+  sigma ~ cauchy(0, 1)
+)</code></pre>
+</div>
+<div id="model-2-and-4-alternatives" class="section level2">
+<h2>Model 2 and 4 alternatives</h2>
+<p>There are two model alternatives I also want to consider. The first one is a version of model 2 that gets rid of individual-level parameters and instead has only population-level parameters. I discussed this model in part 1 and called it 2a there. Here is the model definition</p>
+<pre class="r"><code>#full-pooling model, population-level parameters only
+#2+2+1 parameters
+m2a &lt;- alist(
+  outcome ~ dnorm(mu, sigma),
+  mu &lt;- exp(alpha)*log(time) - exp(beta)*time,
+  alpha &lt;-  a0 + a1*dose_adj,
+  beta &lt;-  b0 + b1*dose_adj,
+  a0 ~ dnorm(2,  0.1),
+  b0 ~ dnorm(0.5, 0.1),
+  a1 ~ dnorm(0.3, 1),
+  b1 ~ dnorm(-0.3, 1),
+  sigma ~ cauchy(0,1)
+)</code></pre>
+<p>Note that <code>a0</code> and <code>b0</code> are not indexed by <code>id</code> anymore and are now single numbers, instead of <span class="math inline">\(N\)</span> values as before.</p>
+<p>I want to mention one more model. This is in fact the same model as model 4, but written in a different way. A potential problem with model 4 and similar models is that parameters inside parameters can lead to inefficient or unreliable numerical results when running your Monte Carlo routine (in our case, this is Stan-powered Hamilton Monte Carlo). It is possible to rewrite the model such that it is the same model, but it looks different in a way that makes the numerics often run better. It turns out for our example, model 4 above runs ok. But it’s a good idea to be aware of the fact that one can re-write models if needed, therefore I decided to include this model alternative here.</p>
+<p>The above model is called a <strong>centered</strong> model and the re-write is called a <strong>non-centered</strong> model. The trick is to pull out the parameters from inside the distributions for <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span>. The non-centered model looks like this:</p>
+<pre class="r"><code>#adaptive priors, partial-pooling model
+#non-centered
+m4a &lt;- alist(
+  outcome ~ dnorm(mu, sigma),
+  mu &lt;- exp(alpha)*log(time) - exp(beta)*time,
+  #rewritten to non-centered
+  alpha &lt;-  mu_a + az[id]*sigma_a + a1*dose_adj,
+  beta  &lt;-  mu_b + bz[id]*sigma_b + b1*dose_adj,
+  #rewritten to non-centered
+  az[id] ~ dnorm(0, 1),
+  bz[id] ~ dnorm(0, 1),
+  mu_a ~ dnorm(2, 1),
+  mu_b ~ dnorm(0.5, 1),
+  sigma_a ~ cauchy(0, 1),
+  sigma_b ~ cauchy(0, 1),
+  a1 ~ dnorm(0.3, 1),
+  b1 ~ dnorm(-0.3, 1),
+  sigma ~ cauchy(0, 1)
+  )</code></pre>
+<p>Again, this model is mathematically the same as the original model 4. If this is confusing and doesn’t make sense (it sure wouldn’t to me if I just saw that for the first time 😁), check the <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking book</a>. (And no, I do not get a commission for continuing to point you to the book, and I wish there was a free online version (or a cheap paperback). But it is a great book and if you want to learn this kind of modeling for real, I think it’s worth the investment.)</p>
+</div>
+<div id="setting-starting-values" class="section level2">
+<h2>Setting starting values</h2>
+<p>Any fitting routine needs to start with some parameter values and then from there tries to improve. <code>Stan</code> uses a heuristic way of picking some starting values. Often that works, sometimes it fails initially but then the routine fixes itself, and sometimes it fails all the way. In either case, I find it a good idea to specify starting values, even if they are not strictly needed. And it’s good to know that this is possible and how to do it, just in case you need it at some point. Setting starting values gives you more control, and you also know exactly what should happen when you look at for instance the traceplots of the chains.</p>
+<pre class="r"><code>## Setting starting values
+#starting values for model 1
+startm1 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), a1 = 0.5 , b1 = -0.5, sigma = 1)
+#starting values for model 2
+startm2 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), mu_a = 2, mu_b = 0.5, a1 = 0.5 , b1 = -0.5, sigma = 1)
+#starting values for model 3
+startm3 = startm1
+#starting values for models 4 and 4a
+startm4 = list(mu_a = 2, sigma_a = 1, mu_b = 0, sigma_b = 1, a1 = 0.5 , b1 = -0.5, sigma = 1)
+startm4a = startm4
+#starting values for model 2a
+startm2a = list(a0 = 2, b0 = 0.5, a1 = 0.5 , b1 = 0.5, sigma = 1)
+#put different starting values in list
+#need to be in same order as models below
+startlist = list(startm1,startm2,startm3,startm4,startm2a,startm4)</code></pre>
+<p>Note that we only specify values for the parameters that are directly estimated. Parameters that are built from other parameters (e.g. <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\beta\)</span>) are computed and don’t need starting values.</p>
+<p>For some more detailed discussion on starting values, see for instance <a href="https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/">this post by Solomon Kurz</a>. He uses <code>brms</code> in his example, but the same idea applies with any package/fitting routine. He also explains that it is a good idea to set different starting values for each chain. I don’t do that here for simplicity, but I agree it’s a good idea in general.</p>
+</div>
+<div id="model-fitting" class="section level2">
+<h2>Model fitting</h2>
+<p>Now that we specified all models, we can loop through all models and fit them.</p>
+<p>In this example, I’m fitting the data that was generated by model 3 since it shows the most realistic pattern. You can try to fit to the other 2 datasets and see what you find. It is not necessarily the case that the model that produced a certain dataset is also the one that fits it best.</p>
+<p>First, some setup before the actual fitting loop.</p>
+<pre class="r"><code>#general settings for fitting
+#you might want to adjust based on your computer
+warmup = 4000
+iter = warmup + floor(warmup/2)
+max_td = 15 #tree depth
+adapt_delta = 0.999
+chains = 5
+cores  = chains
+seed = 1234
+
+#stick all models into a list
+modellist = list(m1=m1,m2=m2,m3=m3,m4=m4,m2a=m2a,m4a=m4a)
+# set up a list in which we&#39;ll store our results
+fl = vector(mode = &quot;list&quot;, length = length(modellist))
+
+#fitting dataset 3
+#also removing anything in the dataframe that&#39;s not used for fitting
+#makes the ulam/Stan code more robust
+fitdat=list(id=simdat[[3]]$id,
+            outcome = simdat[[3]]$outcome,
+            dose_adj = simdat[[3]]$dose_adj,
+            time = simdat[[3]]$time)
+
+#setting for parameter constraints
+constraints = list(sigma=&quot;lower=0&quot;,sigma_a=&quot;lower=0&quot;,sigma_b=&quot;lower=0&quot;)</code></pre>
+<p>The first code block defines various settings for the <code>ulam</code> function. Look at the help file for details. Then we place all models into a list, set up an empty list for our fit results, and specify the data needed for fitting. The final command enforces some constraints on parameters. For our model, we want Half-Cauchy distributions for all variance parameters to ensure they are positive. Above, I specified them as Cauchy. There is no direct Half-Cauchy implementation, but the way one achieves one is to tell <code>ulam</code>/<code>Stan</code> that the values for those parameters need to be positive. That’s what the <code>constraints</code> line in the code below does.</p>
+<p>Looping over each model and fitting it:</p>
+<pre class="r"><code># fitting models
+#loop over all models and fit them using ulam
+for (n in 1:length(modellist))
+{
+
+  cat(&#39;************** \n&#39;)
+  cat(&#39;starting model&#39;, names(modellist[n]), &#39;\n&#39;)
+
+  tstart=proc.time(); #capture current time
+
+  #run model fit
+  fl[[n]]$fit &lt;- ulam(flist = modellist[[n]],
+                          data = fitdat,
+                          start=startlist[[n]],
+                          constraints=constraints,
+                          log_lik=TRUE, cmdstan=TRUE,
+                          control=list(adapt_delta=adapt_delta, max_treedepth = max_td),
+                          chains=chains, cores = cores,
+                          warmup = warmup, iter = iter,
+                          seed = seed
+  )# end ulam
+
+  #capture time taken for fit
+  tdiff=proc.time()-tstart;
+  runtime_minutes=tdiff[[3]]/60;
+
+  cat(&#39;model fit took this many minutes:&#39;, runtime_minutes, &#39;\n&#39;)
+  cat(&#39;************** \n&#39;)
+
+  #add some more things to the fit object
+  fl[[n]]$runtime = runtime_minutes
+  fl[[n]]$model = names(modellist)[n]
+
+} #end fitting of all models
+
+# saving the list of results so we can use them later
+# the file is too large for GitHub
+# thus I am saving here to a local folder
+# adjust accordingly for your setup
+filepath = fs::path(&quot;D:&quot;,&quot;Dropbox&quot;,&quot;datafiles&quot;,&quot;longitudinalbayes&quot;,&quot;ulamfits&quot;, ext=&quot;Rds&quot;)
+saveRDS(fl,filepath)</code></pre>
+<p>In addition to the actual fitting call to <code>ulam</code>, I’m also printing a few messages and storing the model name and duration it too to run. That’s useful for diagnostic. It’s generally a good idea to do short runs until things work, then do a large run to get the actual result. Recording the running time helps decide how long a real run can be and how long it might take.</p>
+</div>
+</div>
+<div id="explore-model-fits" class="section level1">
+<h1>Explore model fits</h1>
+<pre class="r"><code># loading list of previously saved fits.
+# useful if we don&#39;t want to re-fit
+# every time we want to explore the results.
+# since the file is too large for GitHub
+# it is stored in a local folder
+# adjust accordingly for your setup
+filepath = fs::path(&quot;D:&quot;,&quot;Dropbox&quot;,&quot;datafiles&quot;,&quot;longitudinalbayes&quot;,&quot;ulamfits&quot;, ext=&quot;Rds&quot;)
+fl &lt;- readRDS(filepath)</code></pre>
+<p>All fits are in the list called <code>fl</code>. For each model the actual fit is in <code>fit</code>, the model name in <code>model</code> and the run time in <code>runtime</code>.</p>
+<p>You should explore your model fits carefully. Look at the trace-plots or trank-plots with the <code>traceplot()</code> and <code>trankplot()</code> functions in <code>rethinking</code> by running <code>trankplots(fl[[1]]$fit)</code>, etc. Make sure the chains are looking ok. You can also use the <code>summary</code> function to get some useful information on our model. It’s worth exploring that. I’m skipping those here since they take a lot of space, but do explore them. It’s important to be confident the fit worked.</p>
+<p>What I’ll do here is use the <code>precis</code> function from <code>rethinking</code> to look at all parameters for different models.</p>
+<div id="models-1-and-3" class="section level2">
+<h2>Models 1 and 3</h2>
+<p>Let’s start by comparing fits for models 1 and 3. We start with those two because they are essentially the same model, with the only difference being wider priors for the individual-level parameters in model 1.</p>
+<p>It is worth mentioning that when running the fitting routine, model 1 takes much longer to fit than model 3. The wide priors made the fitting efficiency poor. But let’s see how it impacts the results.</p>
+<p>Instead of printing all the <span class="math inline">\(N\)</span> different values of <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span>, I compute their means. If you want to see them all, change to <code>depth=2</code> in the <code>precis</code> function.</p>
+<pre class="r"><code># Model 1
+a0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;a0&quot;)$mean)
+b0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;b0&quot;)$mean)
+print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
+<pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
+<pre><code>##        mean    sd  5.5% 94.5% n_eff Rhat4
+## a1     0.23 0.726 -0.93   1.4   486     1
+## b1    -0.23 0.766 -1.47   1.0   372     1
+## sigma  0.97 0.047  0.90   1.0  5308     1</code></pre>
+<pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
+<pre><code>## [1] 2.928120 1.039854</code></pre>
+<pre class="r"><code># Model 3
+a0mean = mean(precis(fl[[3]]$fit,depth=2,&quot;a0&quot;)$mean)
+b0mean = mean(precis(fl[[3]]$fit,depth=2,&quot;b0&quot;)$mean)
+print(precis(fl[[3]]$fit,depth=1),digits = 2)</code></pre>
+<pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
+<pre><code>##         mean    sd   5.5% 94.5% n_eff Rhat4
+## a1     0.094 0.110 -0.084  0.27  1840     1
+## b1    -0.024 0.110 -0.197  0.15  1783     1
+## sigma  0.973 0.048  0.899  1.05  9692     1</code></pre>
+<pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
+<pre><code>## [1] 2.953396 1.000962</code></pre>
+<p>The models seem to have converged ok, based on <code>Rhat</code> values of 1. Some parameters sampled better than others, as can be seen by the varying <code>n_eff</code> values. I used 5 chains of 2000 post-warmup samples for each chain, so the actual samples are 10^{4}. If <code>n_eff</code> is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it’s possible to get more effective samples than actual samples.)</p>
+<p>We find that estimates for <span class="math inline">\(a_{0}\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(\sigma\)</span> are similar, <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> differ more.</p>
+<p>Note that the only thing we changed between models 1 and 3 are to make the priors for the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> parameters tighter. It didn’t seem to impact their estimates, but somehow it impacted the estimates and credible intervals for parameters <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. I’m not fully sure what to make of that, as of writing this, I’m still trying to full figure out what that means and what’s going on. 🤷.</p>
+<p>We can also use the <code>compare</code> function to see how these models differ.</p>
+<pre class="r"><code>comp13 = compare(fl[[1]]$fit,fl[[3]]$fit)
+print(comp13)</code></pre>
+<pre><code>##                 WAIC       SE    dWAIC       dSE    pWAIC    weight
+## fl[[1]]$fit 786.4537 23.07485 0.000000        NA 44.06020 0.6016941
+## fl[[3]]$fit 787.2788 23.07816 0.825058 0.4147157 44.31481 0.3983059</code></pre>
+<p>I’m not going to discuss things in detail (see <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking</a>), but a lower WAIC means a model that fits best in the sense that it strikes a good balance between fitting the data while not overfitting. As you can see, models 1 and 3 perform very similarly.</p>
+</div>
+<div id="comparing-model-estimates-with-the-truth" class="section level2">
+<h2>Comparing model estimates with the truth</h2>
+<p>Before we move on, let’s reflect on the truth, i.e. the actual values of the parameters, which we know here since we created/simulated the data. To generate the data, we used these parameter values. <span class="math inline">\(\sigma =\)</span> 1, <span class="math inline">\(\mu_a =\)</span> 3, <span class="math inline">\(\mu_b =\)</span> 1, <span class="math inline">\(a_1 =\)</span> 0.2, <span class="math inline">\(b_1 =\)</span> -0.2. We also said that our main scientific question is if there is a dose effect, i.e. non-zero <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>.</p>
+<p>The models find estimates of <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> that are close to what we used. The models also estimate <span class="math inline">\(a_1\)</span> centered around a positive value and <span class="math inline">\(b_1\)</span> on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models and the data we have, we aren’t able to convincingly determine that there is an impact of dose on outcome.</p>
+</div>
+<div id="models-2-and-2a" class="section level2">
+<h2>Models 2 and 2a</h2>
+<p>Next, let’s look at models 2 and 2a. The estimates should be similar since the two models are conceptually pretty much the same.</p>
+<pre class="r"><code># Compare models 2 and 2a
+# first we compute the mean across individuals for model 2
+a0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;a0&quot;)$mean)
+b0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;b0&quot;)$mean)
+
+#rest of model 2
+print(precis(fl[[2]]$fit,depth=1),digits = 2)</code></pre>
+<pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
+<pre><code>##         mean     sd   5.5%  94.5% n_eff Rhat4
+## mu_a   2.967 0.0228  2.930  2.996    21   1.3
+## mu_b   1.010 0.0183  0.980  1.036    15   1.3
+## a1     0.034 0.0116  0.018  0.053    34   1.2
+## b1    -0.051 0.0099 -0.066 -0.036    39   1.2
+## sigma  6.994 0.3156  6.542  7.500    91   1.0</code></pre>
+<pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
+<pre><code>## [1] 2.967378 1.009612</code></pre>
+<pre class="r"><code>#model 2a
+print(precis(fl[[5]]$fit,depth=1),digits = 2)</code></pre>
+<pre><code>##         mean    sd   5.5%  94.5% n_eff Rhat4
+## a0     2.903 0.024  2.864  2.939  4028     1
+## b0     0.956 0.020  0.923  0.988  4095     1
+## a1     0.041 0.012  0.022  0.060  4632     1
+## b1    -0.051 0.010 -0.068 -0.035  4942     1
+## sigma  7.140 0.316  6.649  7.658  5380     1</code></pre>
+<pre class="r"><code>compare(fl[[2]]$fit,fl[[5]]$fit)</code></pre>
+<pre><code>##                 WAIC       SE    dWAIC      dSE    pWAIC      weight
+## fl[[2]]$fit 1787.519 41.56724  0.00000       NA 9.046590 0.995046598
+## fl[[5]]$fit 1798.124 41.73275 10.60543 5.551668 9.780148 0.004953402</code></pre>
+<p>The first thing to note is that model 2 performs awfully, with high <code>Rhat</code> values and very low effective sample size <code>n_eff</code>. This indicates that this model doesn’t work well for the data and we should also take the estimated values not too seriously. However, pretending for a while that we can take them seriously, here is what we find.</p>
+<p>First, both models produce similar estimates. Since model 2a is simpler and doesn’t have that strange feature of us enforcing a very tight distribution for the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> parameters, it actually samples much better, see the higher <code>n_eff</code> numbers.</p>
+<p>Both models do a very poor job estimating <span class="math inline">\(\sigma\)</span>. That’s because we don’t allow the models to have the flexibility needed to fit the data, so it has to account for any variation between its estimated mean trajectory and the real data by making <span class="math inline">\(\sigma\)</span> large.</p>
+<p>Since both models are more constrained, they produce estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> that are tighter. However, their WAIC is much larger than models 1 and 3, indicating either very strong overfitting or underfitting. In this case, it’s underfitting. The models are not flexible enough to capture the individual-level variation. If we did indeed not want to account for individual-level variation, we should go with a model that simply doesn’t include it, i.e. model 2a. The contrived model 2 with very narrow priors is simply a bad model, and I’m really only exploring it here for demonstration purposes.</p>
+</div>
+<div id="models-4-and-4a" class="section level2">
+<h2>Models 4 and 4a</h2>
+<p>Now we get to the models we really care about. When I set up the models, I suggested that model 4 was similar to models 1-3, but with priors adaptively chosen. That didn’t apply during data generation/simulation since in that step, we always need to manually choose values. But during the fitting/estimation, we should expect that model 4 chooses priors in a smart way, such that it is better than the models where we fixed the priors. Let’s see what model 4 produces. We also look at model 4a, which is exactly the same model, just rewritten to potentially make the numerical fitting routine more efficient.</p>
+<pre class="r"><code># model 4
+print(precis(fl[[4]]$fit,depth=1),digits = 2)</code></pre>
+<pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
+<pre><code>##           mean     sd   5.5%  94.5% n_eff Rhat4
+## mu_a     2.965 0.0186  2.935  2.994 10273     1
+## mu_b     1.006 0.0241  0.968  1.045 10837     1
+## sigma_a  0.088 0.0148  0.068  0.114  8465     1
+## sigma_b  0.115 0.0187  0.089  0.148  7469     1
+## a1       0.038 0.0097  0.023  0.053  2009     1
+## b1      -0.049 0.0129 -0.070 -0.029  1687     1
+## sigma    0.972 0.0476  0.898  1.051  8207     1</code></pre>
+<pre class="r"><code># model 4a
+print(precis(fl[[6]]$fit,depth=1),digits = 2)</code></pre>
+<pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
+<pre><code>##           mean     sd   5.5%  94.5% n_eff Rhat4
+## mu_a     2.964 0.0188  2.935  2.994  2502     1
+## mu_b     1.005 0.0239  0.968  1.043  2267     1
+## sigma_a  0.088 0.0147  0.068  0.114  3027     1
+## sigma_b  0.114 0.0187  0.088  0.147  2684     1
+## a1       0.038 0.0099  0.022  0.054  2835     1
+## b1      -0.048 0.0127 -0.068 -0.028  2387     1
+## sigma    0.974 0.0477  0.901  1.053  6194     1</code></pre>
+<p>As you can see, up to numerical sampling variability, the results for models 4 and 4a are pretty much the same. But note the different values for <code>n_eff</code>, suggesting that each model formulation had advantages in sampling for some of the parameters.</p>
+<p>If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> are estimated fairly well. Estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are lower, but the credible intervals are less wide, such that those estimates are now reliably positive/negative.</p>
+<p>Now let’s briefly run the <code>compare</code> function too and include model 3 as well:</p>
+<pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit)</code></pre>
+<pre><code>##                 WAIC       SE    dWAIC       dSE    pWAIC    weight
+## fl[[4]]$fit 785.6727 23.32171 0.000000        NA 43.51786 0.4989711
+## fl[[6]]$fit 786.8462 23.23570 1.173426 0.3918219 43.87500 0.2775039
+## fl[[3]]$fit 787.2788 23.07816 1.606050 2.3367999 44.31481 0.2235250</code></pre>
+<p>We do find that model 4/4a performs a bit better. Note that model 4 has more actual parameters, but the effective parameters (which is described by <code>pWAIC</code>) is smaller. Models 4 and 4a also run much faster during fitting.</p>
+<p>Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely. We still don’t yet retrieve the values we used to simulate the data. At this point, it’s not clear to me if with more sampling we could get there, or if our fairly low <span class="math inline">\(N\)</span> value doesn’t allow better estimation (that doesn’t seem to be the case, see my explorations of simulated data with larger <span class="math inline">\(N\)</span> in <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/">part 4</a>). I am a bit stumped by the fact that not even the credible intervals for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> contain the true values for these parameters. My current best guess is that there is still some parameter degeneracy/overfitting, i.e. there are too many parameters to estimate and the fact that we gave each individual their own <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> let to those parameters “absorbing” some of the dose-dependent signal in <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. But I’m not fully sure that explanation is right. I need to dig into that a bit more (feedback appreciated).</p>
+</div>
+</div>
+<div id="computing-predictions" class="section level1">
+<h1>Computing predictions</h1>
+<p>Looking at tables of estimates as we did so far is somewhat useful, but I generally prefer looking at plots. So let’s plot the predictions implied by the fits for the models. The general strategy for that is to use the parameter estimates in the posterior, put them in the model, and compute the predictions. The <code>rethinking</code> package has some helper functions for that (<code>sim</code> and <code>link</code>).</p>
+<p>The code below produces predictions, both for the deterministic mean trajectory <span class="math inline">\(\mu\)</span>, and the actual outcome, <span class="math inline">\(Y\)</span>, which has added variation.</p>
+<pre class="r"><code># load the data we used for fitting
+simdat &lt;- readRDS(&quot;simdat.Rds&quot;)
+#pull our the data set we used for fitting
+#if you fit a different one of the simulated datasets, change accordingly
+fitdat &lt;- simdat$m3
+#small data adjustment for plotting
+plotdat &lt;- fitdat %&gt;% data.frame() %&gt;% mutate(id = as.factor(id)) %&gt;% mutate(dose = dose_cat)
+
+#this will contain all the predictions from the different models
+fitpred = vector(mode = &quot;list&quot;, length = length(fl))
+
+# we are looping over each fitted model
+for (n in 1:length(fl))
+{
+  #get current model
+  nowmodel = fl[[n]]$fit
+
+  #make new data for which we want predictions
+  #specifically, more time points so the curves are smoother
+  timevec = seq(from = 0.1, to = max(fitdat$time), length=100)
+  Ntot = max(fitdat$id)
+  #data used for predictions
+  preddat = data.frame( id = sort(rep(seq(1,Ntot),length(timevec))),
+                        time = rep(timevec,Ntot),
+                        dose_adj = 0
+  )
+  #add right dose information for each individual
+  for (k in 1:Ntot)
+  {
+    #dose for a given individual
+    nowdose = unique(fitdat$dose_adj[fitdat$id == k])
+    nowdose_cat = unique(fitdat$dose_cat[fitdat$id == k])
+    #assign that dose
+    #the categorical values are just for plotting
+    preddat[(preddat$id == k),&quot;dose_adj&quot;] = nowdose
+    preddat[(preddat$id == k),&quot;dose_cat&quot;] = nowdose_cat
+  }
+
+  # pull out posterior samples for the parameters
+  post &lt;- extract.samples(nowmodel)
+
+  # estimate and CI for parameter variation
+  # this uses the link function from rethinking
+  linkmod &lt;- rethinking::link(nowmodel, data = preddat)
+
+  #computing mean and various credibility intervals
+  #these choices are inspired by the Statistical Rethinking book
+  #and purposefully do not include 95%
+  #to minimize thoughts of statistical significance
+  #significance is not applicable here since we are doing bayesian fitting
+  modmean &lt;- apply( linkmod$mu , 2 , mean )
+  modPI79 &lt;- apply( linkmod$mu , 2 , PI , prob=0.79 )
+  modPI89 &lt;- apply( linkmod$mu , 2 , PI , prob=0.89 )
+  modPI97 &lt;- apply( linkmod$mu , 2 , PI , prob=0.97 )
+
+  # estimate and CI for prediction intervals
+  # this uses the sim function from rethinking
+  # the predictions factor in additional uncertainty around the mean (mu)
+  # as indicated by sigma
+  simmod &lt;- rethinking::sim(nowmodel, data = preddat)
+
+  # mean and credible intervals for outcome predictions
+  # mean should agree with above values
+  modmeansim &lt;- apply( simmod , 2 , mean )
+  modPIsim &lt;- apply( simmod , 2 , PI , prob=0.89 )
+
+  #place all predictions into a data frame
+  #and store in a list for each model
+  fitpred[[n]] = data.frame(id = as.factor(preddat$id),
+                            dose = as.factor(preddat$dose_cat),
+                            predtime = preddat$time,
+                            Estimate = modmean,
+                            Q79lo = modPI79[1,], Q79hi = modPI79[2,],
+                            Q89lo = modPI89[1,], Q89hi = modPI89[2,],
+                            Q97lo = modPI97[1,], Q97hi = modPI97[2,],
+                            Qsimlo=modPIsim[1,], Qsimhi=modPIsim[2,]
+                            )
+} #end loop over all models</code></pre>
+</div>
+<div id="creating-plots-of-the-results" class="section level1">
+<h1>Creating plots of the results</h1>
+<p>Now that we got the predictions computed, we can plot them and compare to the data.
+It turns out that trying to plot all the different credible intervals makes the plot too busy, so I’m only showing a few.
+You can play around by turning the commented lines on.</p>
+<pre class="r"><code>#list for storing all plots
+plotlist = vector(mode = &quot;list&quot;, length = length(fl))
+
+#again looping over all models, making a plot for each
+for (n in 1:length(fl))
+{
+  #adding titles to plots
+  title = fl[[n]]$model
+
+  plotlist[[n]] &lt;- ggplot(data = fitpred[[n]], aes(x = predtime, y = Estimate, group = id, color = dose ) ) +
+    geom_line() +
+    #geom_ribbon( aes(x=time, ymin=Q79lo, ymax=Q79hi, fill = dose), alpha=0.6, show.legend = F) +
+    geom_ribbon(aes(x=predtime, ymin=Q89lo, ymax=Q89hi, fill = dose, color = NULL), alpha=0.3, show.legend = F) +
+    #geom_ribbon(aes(x=time, ymin=Q97lo, ymax=Q97hi, fill = dose), alpha=0.2, show.legend = F) +
+    geom_ribbon(aes(x=predtime, ymin=Qsimlo, ymax=Qsimhi, fill = dose, color = NULL), alpha=0.1, show.legend = F) +
+    geom_point(data = plotdat, aes(x = time, y = outcome, group = id, color = dose), shape = 1, size = 2) +
+    scale_y_continuous(limits = c(-30,50)) +
+    labs(y = &quot;Virus load&quot;,
+         x = &quot;days post infection&quot;) +
+    theme_minimal() +
+    ggtitle(title)
+}
+#saving one plot so I can use as featured image
+ggsave(file = paste0(&quot;fit_m4.png&quot;), plotlist[[4]], dpi = 300, units = &quot;in&quot;, width = 7, height = 7)</code></pre>
+</div>
+<div id="showing-the-plots" class="section level1">
+<h1>Showing the plots</h1>
+<p>Here are the plots for all models we considered.
+I’m plotting them in the order I discussed the models above, so the ones we compared above are shown right below each other.</p>
+<p>It’s a bit hard to see, but each plot contains for each individual the data as symbols, the estimated mean as line, and the 89% credible interval and prediction interval as shaded areas.</p>
+<div id="models-1-and-3-1" class="section level2">
+<h2>Models 1 and 3</h2>
+<pre class="r"><code>plot(plotlist[[1]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_1_3_plots-1.png" width="672" /></p>
+<pre class="r"><code>plot(plotlist[[3]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_1_3_plots-2.png" width="672" /></p>
+<p>Mirroring the findings from above, the models are very similar. In fact, it’s hard to tell any difference by just looking at the plots (but they are slightly different, I checked).</p>
+</div>
+<div id="models-2-and-2a-1" class="section level2">
+<h2>Models 2 and 2a</h2>
+<p>For models 2 and 2a, recall that the only variation is for dose, we didn’t allow variation among individuals. That’s reflected in the plots. The credible intervals based on parameters are tight, but because the variability, <span class="math inline">\(\sigma\)</span>, had to account for all the differences, the prediction intervals are very wide.</p>
+<pre class="r"><code>plot(plotlist[[2]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_2_2a_plots-1.png" width="672" /></p>
+<pre class="r"><code>plot(plotlist[[5]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_2_2a_plots-2.png" width="672" /></p>
+</div>
+<div id="models-4-and-4a-1" class="section level2">
+<h2>Models 4 and 4a</h2>
+<p>These models look good again, and very similar to models 1 and 3.</p>
+<pre class="r"><code>plot(plotlist[[4]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_4_4a_plots-1.png" width="672" /></p>
+<pre class="r"><code>plot(plotlist[[6]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_4_4a_plots-2.png" width="672" /></p>
+<p>So overall, the figures make sense and indicates that apart from models 2/2a, the other models are performing well. I consider model 4/4a the most suitable one. But now looking at these figures and seeing the nice matches between data and models, I’m still a bit puzzled by the fact that <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are not that well estimated…</p>
+</div>
+</div>
+<div id="summary-and-continuation" class="section level1">
+<h1>Summary and continuation</h1>
+<p>To sum it up, we fit several models to the simulated time-series data to explore how different model formulations might or might not impact results. For this post, I used the - very nice! - <code>rethinking</code> package. In the next post, I’ll repeat the fitting again, now using <code>brms</code>. Since <code>brms</code> is very widely used and has some capabilities that go beyond what <code>rethinking</code> can do, I think it’s worth <a href="/posts/longitudinal-multilevel-bayesian-analysis-3/">reading the next post</a>.</p>
+<p>If you don’t care about <code>brms</code>, you can hop to <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/">this post</a>, where I discuss a few further topics and variations. Any fitting done in that post is with <code>ulam</code>/<code>rethinking</code>, so you don’t need to look at the <code>brms</code> post, but I still suggest you do 😁.</p>
+</div>

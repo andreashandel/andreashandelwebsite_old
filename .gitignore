@@ -1,0 +1,6 @@
+.Rproj.user
+.DS_Store
+Thumbs.db
+/resources/
+/public/
+.Rhistory
