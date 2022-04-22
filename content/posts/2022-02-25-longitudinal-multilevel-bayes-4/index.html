@@ -74,7 +74,7 @@ Since there isn’t anything fundamentally new to show or learn, I’m not imple
 <p>These are the settings we use for all fits shown in this post:</p>
 <pre class="r"><code>#general settings for fitting
 #you might want to adjust based on your computer
-warmup = 400
+warmup = 4000
 iter = warmup + floor(warmup/2)
 max_td = 15 #tree depth
 adapt_delta = 0.999
@@ -207,33 +207,33 @@ fl &lt;- readRDS(filepath)</code></pre>
 <pre class="r"><code>#Model 2a
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>##         mean     sd   5.5%  94.5% n_eff Rhat4
-## a0     2.984 0.0053  2.975  2.992   366     1
-## b0     1.016 0.0046  1.008  1.023   321     1
-## a1     0.035 0.0027  0.030  0.039   646     1
-## b1    -0.058 0.0025 -0.062 -0.055   667     1
-## sigma  1.750 0.0832  1.622  1.884   435     1</code></pre>
+## a0     2.984 0.0051  2.976  2.992  4451     1
+## b0     1.016 0.0046  1.009  1.023  4483     1
+## a1     0.035 0.0026  0.031  0.039  4919     1
+## b1    -0.059 0.0024 -0.062 -0.055  4949     1
+## sigma  1.754 0.0771  1.636  1.880  5690     1</code></pre>
 <pre class="r"><code>#Model 4
 a0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;a0&quot;)$mean)
 b0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[2]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
-<pre><code>##           mean     sd    5.5%  94.5% n_eff Rhat4
-## mu_a     2.985 0.0057  2.9760  2.994   682   1.0
-## mu_b     1.020 0.0045  1.0127  1.027   703   1.0
-## sigma_a  0.021 0.0055  0.0125  0.029   159   1.0
-## sigma_b  0.017 0.0049  0.0094  0.025   118   1.1
-## a1       0.044 0.0028  0.0392  0.048   618   1.0
-## b1      -0.050 0.0023 -0.0533 -0.046   587   1.0
-## sigma    1.048 0.0501  0.9718  1.125  1120   1.0</code></pre>
+<pre><code>##           mean     sd   5.5%  94.5% n_eff Rhat4
+## mu_a     2.985 0.0054  2.977  2.994  9429     1
+## mu_b     1.020 0.0045  1.013  1.027  9141     1
+## sigma_a  0.021 0.0053  0.013  0.029  2462     1
+## sigma_b  0.017 0.0046  0.010  0.025  2609     1
+## a1       0.044 0.0029  0.039  0.048  6574     1
+## b1      -0.050 0.0025 -0.054 -0.046  6047     1
+## sigma    1.047 0.0499  0.971  1.130 13610     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.985060 1.019502</code></pre>
+<pre><code>## [1] 2.985232 1.019708</code></pre>
 <p>The estimates for the parameters are fairly similar. Model 2a still has a larger <span class="math inline">\(\sigma\)</span> to account for any additional variation between individuals.</p>
 <p>We can compare models:</p>
 <pre class="r"><code>comp &lt;- compare(fl[[1]]$fit,fl[[2]]$fit)
 print(comp)</code></pre>
 <pre><code>##                  WAIC       SE    dWAIC      dSE     pWAIC       weight
-## fl[[2]]$fit  813.3875 23.13194   0.0000       NA 34.446803 1.000000e+00
-## fl[[1]]$fit 1052.2412 20.99936 238.8537 25.04187  5.749625 1.360145e-52</code></pre>
+## fl[[2]]$fit  812.8219 22.96632   0.0000       NA 34.086356 1.000000e+00
+## fl[[1]]$fit 1051.2185 20.79720 238.3966 24.76803  5.333747 1.709335e-52</code></pre>
 <p>So model 2a is still not as good. Recall that WAIC is an estimate for how well the model might fit to <strong>new</strong> data. While model 2 fits well to the existing data, the larger <span class="math inline">\(\sigma\)</span> means predictions for new data is less certain - as you can see in the plots that come next.</p>
 <p>Let’s look at plots to further see if/how the models differ. First, we compute model predictions as done previously.</p>
 <pre class="r"><code>#this will contain all the predictions from the different models
@@ -366,15 +366,15 @@ b0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 480 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##           mean     sd   5.5%  94.5% n_eff Rhat4
-## mu_a     2.983 0.0069  2.972  2.994  3000   1.0
-## mu_b     1.017 0.0064  1.007  1.027  1005   1.0
-## sigma_a  0.105 0.0048  0.097  0.113  2352   1.0
-## sigma_b  0.099 0.0046  0.092  0.106  1789   1.0
-## a1       0.046 0.0036  0.040  0.051    78   1.0
-## b1      -0.047 0.0034 -0.052 -0.042    56   1.1
-## sigma    1.008 0.0152  0.984  1.034  1342   1.0</code></pre>
+## mu_a     2.983 0.0069  2.972  2.994 14861     1
+## mu_b     1.017 0.0064  1.007  1.027 16198     1
+## sigma_a  0.105 0.0050  0.097  0.113 15933     1
+## sigma_b  0.099 0.0046  0.092  0.106 15394     1
+## a1       0.046 0.0036  0.040  0.052   551     1
+## b1      -0.047 0.0035 -0.052 -0.041   585     1
+## sigma    1.008 0.0152  0.984  1.033 11102     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.983137 1.016682</code></pre>
+<pre><code>## [1] 2.983091 1.016588</code></pre>
 <p>Note the message about the hidden parameters, it’s 10 times as many as previously, since we have <span class="math inline">\(N\)</span> increased by a factor of 10. If we compare these estimates to those for model 4 in <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/">part 2</a>, we notice there’s not much difference with the larger sample size. The credible intervals shrank, which is expected for larger sample size. But the estimates for the mean for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are still not close to the true values. So I’m still puzzled 🤷.</p>
 </div>
 <div id="alternative-to-enforcing-positivity-of-parameters" class="section level1">
@@ -500,32 +500,32 @@ b0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##         mean    sd   5.5% 94.5% n_eff Rhat4
-## a1     0.085 0.112 -0.097  0.27   185   1.0
-## b1    -0.014 0.114 -0.188  0.17   106   1.1
-## sigma  0.974 0.046  0.903  1.05  1507   1.0</code></pre>
+## a1     0.092 0.110 -0.083  0.26  2016     1
+## b1    -0.027 0.109 -0.200  0.15  2128     1
+## sigma  0.973 0.047  0.900  1.05  9805     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.9551080 0.9989672</code></pre>
+<pre><code>## [1] 2.953856 1.001643</code></pre>
 <pre class="r"><code>#Model 5
 print(precis(fl[[2]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##       mean    sd 5.5% 94.5% n_eff Rhat4
-## a2    1.07 0.526 0.32   2.0   108     1
-## b2    0.69 0.400 0.18   1.4   140     1
-## sigma 0.97 0.049 0.90   1.1   729     1</code></pre>
+## a2    1.04 0.441 0.36   1.8  1524     1
+## b2    0.74 0.443 0.18   1.6  1440     1
+## sigma 0.97 0.047 0.90   1.1 10023     1</code></pre>
 <pre class="r"><code>a0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;a0&quot;)$mean)
 b0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 3.031634 1.017797</code></pre>
+<pre><code>## [1] 3.013236 1.018221</code></pre>
 <pre class="r"><code>a1est = (precis(fl[[2]]$fit,pars=&quot;a2&quot;)[1,]-1)*a0mean
 b1est = (precis(fl[[2]]$fit,pars=&quot;b2&quot;)[1,]-1)*a0mean
 print(c(a1est,b1est))</code></pre>
-<pre><code>## [1]  0.2139723 -0.9509501</code></pre>
+<pre><code>## [1]  0.1162258 -0.7868747</code></pre>
 <p>We find overall similar estimates, but the new model 5 has fairly wide credible intervals.</p>
 <p>We can also compare the two models.</p>
 <pre class="r"><code>compare(fl[[1]]$fit,fl[[2]]$fit)</code></pre>
-<pre><code>##                 WAIC       SE    dWAIC      dSE    pWAIC    weight
-## fl[[1]]$fit 786.5432 22.95571 0.000000       NA 43.78800 0.6614044
-## fl[[2]]$fit 787.8823 23.00777 1.339118 1.115668 44.59604 0.3385956</code></pre>
+<pre><code>##                 WAIC       SE      dWAIC       dSE    pWAIC    weight
+## fl[[2]]$fit 786.8957 23.06786 0.00000000        NA 44.18873 0.5032391
+## fl[[1]]$fit 786.9216 23.06469 0.02591321 0.3164086 44.22696 0.4967609</code></pre>
 <p>The fit quality is more or less the same. Note that model 5 took almost twice as long to run compared to model 3.</p>
 <p>Finally, let’s do the plots to check that they look more or less the same.</p>
 <pre class="r"><code>#this will contain all the predictions from the different models
@@ -691,65 +691,65 @@ fl &lt;- readRDS(filepath)</code></pre>
 <pre class="r"><code>#Model 6
 print(precis(fl[[1]]$fit,depth=2),digits = 2)</code></pre>
 <pre><code>##           mean    sd   5.5% 94.5% n_eff Rhat4
-## a0[1]    2.587 0.519  1.789  3.50    82   1.1
-## a0[2]    2.517 0.518  1.734  3.43    82   1.1
-## a0[3]    2.355 0.518  1.562  3.27    82   1.1
-## a0[4]    2.308 0.520  1.523  3.21    82   1.1
-## a0[5]    2.300 0.519  1.508  3.22    82   1.1
-## a0[6]    2.404 0.519  1.611  3.32    82   1.1
-## a0[7]    2.374 0.520  1.584  3.28    82   1.1
-## a0[8]    2.411 0.518  1.626  3.32    82   1.1
-## a0[9]    2.358 0.518  1.573  3.27    82   1.1
-## a0[10]   2.448 0.517  1.667  3.37    82   1.1
-## a0[11]   2.362 0.518  1.581  3.28    82   1.1
-## a0[12]   2.303 0.517  1.519  3.22    82   1.1
-## a0[13]   2.408 0.518  1.626  3.32    82   1.1
-## a0[14]   2.553 0.517  1.780  3.47    82   1.1
-## a0[15]   2.410 0.518  1.625  3.33    82   1.1
-## a0[16]   2.467 0.517  1.663  3.38    82   1.1
-## a0[17]   2.294 0.517  1.494  3.21    82   1.1
-## a0[18]   2.414 0.517  1.612  3.33    82   1.1
-## a0[19]   2.489 0.517  1.691  3.40    82   1.1
-## a0[20]   2.481 0.517  1.675  3.40    82   1.1
-## a0[21]   2.432 0.517  1.626  3.35    82   1.1
-## a0[22]   2.372 0.516  1.570  3.28    82   1.1
-## a0[23]   2.373 0.517  1.566  3.28    82   1.1
-## a0[24]   2.333 0.517  1.523  3.25    82   1.1
-## b0[1]    1.102 0.468  0.396  1.87    38   1.1
-## b0[2]    0.990 0.468  0.277  1.76    39   1.1
-## b0[3]    1.051 0.467  0.335  1.81    38   1.1
-## b0[4]    1.092 0.468  0.385  1.86    38   1.1
-## b0[5]    1.280 0.467  0.569  2.05    38   1.1
-## b0[6]    1.036 0.467  0.324  1.80    38   1.1
-## b0[7]    1.142 0.467  0.427  1.91    39   1.1
-## b0[8]    1.130 0.466  0.388  1.89    37   1.1
-## b0[9]    1.031 0.466  0.294  1.79    38   1.1
-## b0[10]   1.112 0.466  0.376  1.87    38   1.1
-## b0[11]   1.253 0.465  0.519  2.01    37   1.1
-## b0[12]   1.173 0.466  0.447  1.93    37   1.1
-## b0[13]   1.117 0.466  0.381  1.86    37   1.1
-## b0[14]   1.079 0.466  0.346  1.84    37   1.1
-## b0[15]   0.927 0.467  0.192  1.69    37   1.1
-## b0[16]   1.205 0.463  0.496  1.95    38   1.1
-## b0[17]   0.989 0.464  0.285  1.74    38   1.1
-## b0[18]   1.178 0.464  0.470  1.94    38   1.1
-## b0[19]   1.314 0.464  0.605  2.07    38   1.1
-## b0[20]   0.988 0.464  0.277  1.74    38   1.1
-## b0[21]   1.188 0.463  0.481  1.94    38   1.1
-## b0[22]   1.089 0.464  0.378  1.85    38   1.1
-## b0[23]   0.985 0.464  0.271  1.74    38   1.1
-## b0[24]   0.970 0.463  0.259  1.71    38   1.1
-## mu_a     2.406 0.516  1.613  3.32    82   1.1
-## mu_b     1.101 0.465  0.374  1.84    37   1.1
-## sigma_a  0.089 0.014  0.069  0.11   343   1.0
-## sigma_b  0.115 0.020  0.089  0.15   310   1.0
-## a1[1]    0.482 0.519 -0.431  1.27    82   1.1
-## a1[2]    0.539 0.517 -0.381  1.32    82   1.1
-## a1[3]    0.655 0.517 -0.258  1.46    82   1.1
-## b1[1]    0.037 0.467 -0.730  0.74    38   1.1
-## b1[2]   -0.128 0.466 -0.878  0.61    38   1.1
-## b1[3]   -0.192 0.463 -0.941  0.51    38   1.1
-## sigma    0.971 0.049  0.894  1.05   266   1.0</code></pre>
+## a0[1]    2.679 0.497  1.856  3.46   650     1
+## a0[2]    2.609 0.497  1.787  3.39   651     1
+## a0[3]    2.449 0.497  1.623  3.24   649     1
+## a0[4]    2.401 0.496  1.577  3.19   650     1
+## a0[5]    2.391 0.497  1.569  3.18   651     1
+## a0[6]    2.496 0.497  1.673  3.28   651     1
+## a0[7]    2.466 0.497  1.643  3.25   651     1
+## a0[8]    2.503 0.496  1.679  3.29   650     1
+## a0[9]    2.450 0.497  1.627  3.24   650     1
+## a0[10]   2.540 0.497  1.714  3.33   650     1
+## a0[11]   2.454 0.497  1.627  3.24   651     1
+## a0[12]   2.394 0.497  1.568  3.18   652     1
+## a0[13]   2.500 0.497  1.672  3.29   650     1
+## a0[14]   2.644 0.497  1.817  3.43   651     1
+## a0[15]   2.502 0.497  1.673  3.29   650     1
+## a0[16]   2.559 0.497  1.729  3.35   649     1
+## a0[17]   2.387 0.497  1.561  3.18   648     1
+## a0[18]   2.506 0.497  1.680  3.29   648     1
+## a0[19]   2.581 0.497  1.761  3.37   647     1
+## a0[20]   2.573 0.497  1.750  3.36   648     1
+## a0[21]   2.524 0.497  1.700  3.31   648     1
+## a0[22]   2.465 0.497  1.642  3.25   647     1
+## a0[23]   2.465 0.497  1.641  3.25   648     1
+## a0[24]   2.426 0.497  1.601  3.21   648     1
+## b0[1]    1.072 0.489  0.321  1.89   490     1
+## b0[2]    0.959 0.489  0.206  1.78   493     1
+## b0[3]    1.022 0.489  0.270  1.84   488     1
+## b0[4]    1.062 0.488  0.312  1.88   487     1
+## b0[5]    1.249 0.488  0.496  2.07   490     1
+## b0[6]    1.005 0.489  0.252  1.83   486     1
+## b0[7]    1.112 0.488  0.359  1.93   487     1
+## b0[8]    1.096 0.489  0.350  1.91   494     1
+## b0[9]    0.997 0.489  0.250  1.81   491     1
+## b0[10]   1.077 0.489  0.332  1.89   493     1
+## b0[11]   1.219 0.489  0.468  2.04   492     1
+## b0[12]   1.138 0.489  0.389  1.95   492     1
+## b0[13]   1.083 0.489  0.334  1.90   490     1
+## b0[14]   1.045 0.489  0.296  1.86   490     1
+## b0[15]   0.892 0.490  0.143  1.71   491     1
+## b0[16]   1.172 0.489  0.423  1.98   490     1
+## b0[17]   0.957 0.490  0.205  1.76   490     1
+## b0[18]   1.145 0.490  0.396  1.95   493     1
+## b0[19]   1.281 0.490  0.531  2.09   491     1
+## b0[20]   0.956 0.490  0.206  1.77   492     1
+## b0[21]   1.155 0.490  0.407  1.97   490     1
+## b0[22]   1.056 0.490  0.308  1.87   493     1
+## b0[23]   0.951 0.490  0.203  1.76   489     1
+## b0[24]   0.937 0.490  0.189  1.75   497     1
+## mu_a     2.499 0.496  1.677  3.28   648     1
+## mu_b     1.068 0.488  0.324  1.88   484     1
+## sigma_a  0.090 0.016  0.068  0.12  2313     1
+## sigma_b  0.115 0.019  0.089  0.15  2425     1
+## a1[1]    0.390 0.497 -0.394  1.21   650     1
+## a1[2]    0.447 0.496 -0.340  1.28   650     1
+## a1[3]    0.562 0.497 -0.223  1.39   647     1
+## b1[1]    0.067 0.488 -0.754  0.82   489     1
+## b1[2]   -0.093 0.489 -0.910  0.66   491     1
+## b1[3]   -0.159 0.490 -0.970  0.59   491     1
+## sigma    0.974 0.046  0.903  1.05  2229     1</code></pre>
 <p>The <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> coefficients are the interesting ones. We now have a different estimate for each dose. The <span class="math inline">\(a_1\)</span> increase with dose and the <span class="math inline">\(b_1\)</span> decrease with dose, which is consistent with the linear/continuous model (compare e.g. with the values in for model 4 shown above.)</p>
 <p>Let’s compute predictions so we can plot.</p>
 <pre class="r"><code>#this will contain all the predictions from the different models

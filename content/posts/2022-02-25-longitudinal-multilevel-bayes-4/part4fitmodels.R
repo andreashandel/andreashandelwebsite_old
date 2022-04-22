@@ -101,7 +101,7 @@ m6 <- alist(
 ## ---- fitsettings --------
 #general settings for fitting
 #you might want to adjust based on your computer
-warmup = 400
+warmup = 4000
 iter = warmup + floor(warmup/2)
 max_td = 15 #tree depth
 adapt_delta = 0.999
