@@ -53,6 +53,8 @@ add custom footer site_footer.html to layouts/partials folder
 
 ## Ideas for new posts/content
 
+
+
 ### Science/Research
 
 * Reading/managing/publishing papers: turn my presentation and my text on the 'teaching-research-resources' list into a blog post.
@@ -77,3 +79,4 @@ Review of my technology stack for online courses
 
 * See "started blog posts": staying mentally in good shape in grad school (and in general). comparing mental exercise/meditation to physical exercise, where do analogies work and where do they not.
 
+* epidemiological biases and "learn from experts" literature (e.g. tim ferriss books)
