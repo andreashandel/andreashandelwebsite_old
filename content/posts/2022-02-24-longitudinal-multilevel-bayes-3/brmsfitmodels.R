@@ -37,20 +37,15 @@ m1eqs <- bf(  #main equation for time-series trajectory
           beta  ~ 0 + id + dose_adj,
           nl = TRUE)
 
-# m1priors <- c(#assign priors to all coefficients related to id and dose_adj for alpha and beta
-#               prior(normal(2, 10),  class = "b",  nlpar = "alpha"),
-#               prior(normal(0.5, 10),  class = "b",  nlpar = "beta"),
-#               #change the dose_adj priors to something different than the id priors
-#               prior(normal(0.3, 1),   class = "b",  nlpar = "alpha", coef = "dose_adj"),
-#               prior(normal(-0.3, 1),  class = "b",  nlpar = "beta", coef = "dose_adj"),
-#               prior(cauchy(0,1), class = "sigma") )
+m1priors <- c(#assign priors to all coefficients related to both id and dose_adj for alpha and beta
+              prior(normal(2, 10),  class = "b",  nlpar = "alpha"),
+              prior(normal(0.5, 10),  class = "b",  nlpar = "beta"),
+              #change the dose_adj priors to something different than the id priors
+              prior(normal(0.3, 1),   class = "b",  nlpar = "alpha", coef = "dose_adj"),
+              prior(normal(-0.3, 1),  class = "b",  nlpar = "beta", coef = "dose_adj"),
+              prior(cauchy(0,1), class = "sigma") )
 
-m1priors <- c(prior(normal(0, 1),   class = "b",  nlpar = "alpha", coef = "dose_adj"),
-              prior(normal(0, 1),  class = "b",  nlpar = "beta", coef = "dose_adj")
-             )
 
-#x<-get_prior(m1eqs,data=fitdat)
-#print(x)
 
 ## ---- model-2a --------
 #full-pooling model

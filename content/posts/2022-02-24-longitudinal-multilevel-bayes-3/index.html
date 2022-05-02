@@ -73,20 +73,13 @@ m1eqs &lt;- bf(  #main equation for time-series trajectory
           beta  ~ 0 + id + dose_adj,
           nl = TRUE)
 
-# m1priors &lt;- c(#assign priors to all coefficients related to id and dose_adj for alpha and beta
-#               prior(normal(2, 10),  class = &quot;b&quot;,  nlpar = &quot;alpha&quot;),
-#               prior(normal(0.5, 10),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;),
-#               #change the dose_adj priors to something different than the id priors
-#               prior(normal(0.3, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
-#               prior(normal(-0.3, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;),
-#               prior(cauchy(0,1), class = &quot;sigma&quot;) )
-
-m1priors &lt;- c(prior(normal(0, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
-              prior(normal(0, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;)
-             )
-
-#x&lt;-get_prior(m1eqs,data=fitdat)
-#print(x)</code></pre>
+m1priors &lt;- c(#assign priors to all coefficients related to both id and dose_adj for alpha and beta
+              prior(normal(2, 10),  class = &quot;b&quot;,  nlpar = &quot;alpha&quot;),
+              prior(normal(0.5, 10),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;),
+              #change the dose_adj priors to something different than the id priors
+              prior(normal(0.3, 1),   class = &quot;b&quot;,  nlpar = &quot;alpha&quot;, coef = &quot;dose_adj&quot;),
+              prior(normal(-0.3, 1),  class = &quot;b&quot;,  nlpar = &quot;beta&quot;, coef = &quot;dose_adj&quot;),
+              prior(cauchy(0,1), class = &quot;sigma&quot;) )</code></pre>
 <p>Notice how this notation in <code>brms</code> looks quite a bit different than the mathematical equations or the <code>ulam</code> implementation. That’s a part I don’t particularly like about <code>brms</code>, the very condensed formula notation. It takes time getting used to and it always requires extra checking to ensure the model implemented in code corresponds to the mathematical model. One can check by looking at the priors and make sure they look as expected. We’ll do that below after we fit.</p>
 </div>
 <div id="model-2a" class="section level2">

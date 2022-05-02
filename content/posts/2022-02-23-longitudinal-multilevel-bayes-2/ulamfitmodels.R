@@ -123,25 +123,53 @@ m4a <- alist(
   a1 ~ dnorm(0.3, 1),
   b1 ~ dnorm(-0.3, 1),
   sigma ~ cauchy(0, 1)
+  
   )
+
+## ---- model-5 --------
+#no dose effect
+#separate intercept for each individual/id
+#2xN+1 parameters
+m5 <- alist(
+  # distribution of outcome
+  outcome ~ dnorm(mu, sigma),
+  
+  # main equation for time-series trajectory
+  mu <- exp(alpha)*log(time) - exp(beta)*time,
+  
+  #equations for alpha and beta
+  alpha <-  a0[id],
+  beta <-  b0[id],
+  
+  #priors
+  a0[id] ~ dnorm(2,  10),
+  b0[id] ~ dnorm(0.5, 10),
+
+  sigma ~ cauchy(0,1)
+)
+
+
 
 
 ## ---- startvalues --------
 ## Setting starting values
 #starting values for model 1
-startm1 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), a1 = 0.5 , b1 = -0.5, sigma = 1)
+startm1 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), a1 = 0.3 , b1 = -0.3, sigma = 1)
 #starting values for model 2
-startm2 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), mu_a = 2, mu_b = 0.5, a1 = 0.5 , b1 = -0.5, sigma = 1)
+startm2 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), mu_a = 2, mu_b = 1, a1 = 0.3 , b1 = -0.3, sigma = 1)
 #starting values for model 3
 startm3 = startm1
 #starting values for models 4 and 4a
-startm4 = list(mu_a = 2, sigma_a = 1, mu_b = 0, sigma_b = 1, a1 = 0.5 , b1 = -0.5, sigma = 1)
+startm4 = list(mu_a = 2, sigma_a = 1, mu_b = 1, sigma_b = 1, a1 = 0.3 , b1 = -0.3, sigma = 1)
 startm4a = startm4
 #starting values for model 2a
-startm2a = list(a0 = 2, b0 = 0.5, a1 = 0.5 , b1 = 0.5, sigma = 1)
+startm2a = list(a0 = 2, b0 = 0.5, a1 = 0.3, b1 = -0.3, sigma = 1)
+#starting values for model 5
+startm5 = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), sigma = 1)
+
 #put different starting values in list
 #need to be in same order as models below
-startlist = list(startm1,startm2,startm3,startm4,startm2a,startm4)
+startlist = list(startm1,startm2,startm3,startm4,startm2a,startm4,startm5)
 
 
 
@@ -150,14 +178,14 @@ startlist = list(startm1,startm2,startm3,startm4,startm2a,startm4)
 #you might want to adjust based on your computer
 warmup = 4000
 iter = warmup + floor(warmup/2)
-max_td = 15 #tree depth
-adapt_delta = 0.999
+max_td = 18 #tree depth
+adapt_delta = 0.9999
 chains = 5
 cores  = chains
 seed = 1234
 
 #stick all models into a list
-modellist = list(m1=m1,m2=m2,m3=m3,m4=m4,m2a=m2a,m4a=m4a)
+modellist = list(m1=m1,m2=m2,m3=m3,m4=m4,m2a=m2a,m4a=m4a,m5=m5)
 # set up a list in which we'll store our results
 fl = vector(mode = "list", length = length(modellist))
 

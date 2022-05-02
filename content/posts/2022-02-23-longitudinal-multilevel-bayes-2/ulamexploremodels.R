@@ -1,6 +1,6 @@
 # part 2 of code of ulam/rethinking tutorial (part 2)
 # https://www.andreashandel.com/posts/longitudinal-multilevel-bayesian-analysis-2/
-# this has the code part that explores the fits
+# this has the code part that explores the fits produced by the previous R script
 
 
 ## ---- packages2 --------
@@ -19,6 +19,77 @@ library('fs') #for file path
 # adjust accordingly for your setup
 filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
 fl <- readRDS(filepath)
+# also load data file used for fitting
+simdat <- readRDS("simdat.Rds")
+#pull our the data set we used for fitting
+#if you fit a different one of the simulated datasets, change accordingly
+fitdat <- simdat$m3
+#contains parameters used for fitting
+pars <- simdat$m3pars
+
+## ---- diagnostics ------
+# Model 5 summary
+show(fl[[5]]$fit)
+
+## ---- traceplot ------
+# Model 5 trace plots and trank plots
+traceplot(fl[[5]]$fit, pars = c("a0","b0","a1","b1","sigma"))
+
+## ---- trankplot ------
+# Model 5 trank plots
+trankplot(fl[[5]]$fit, pars = c("a0","b0","a1","b1","sigma"))
+
+## ---- pairplot ------
+# Model 5 pair plot
+# Correlation between posterior samples of parameters
+pairs(fl[[5]]$fit, pars = c("a0","b0","a1","b1","sigma"))
+
+
+## ---- mod_1_3_prior --------
+#get priors and posteriors for models 1 and 3
+m1prior <- extract.prior(fl[[1]]$fit, n = 1e4)
+m1post <- extract.samples(fl[[1]]$fit, n = 1e4)
+
+m3prior <- extract.prior(fl[[3]]$fit, n = 1e4)
+m3post <- extract.samples(fl[[3]]$fit, n = 1e4)
+
+## ---- mod_1_3_prior_plots --------
+#showing density plots for a0
+plot(density(m1prior$a0), xlim = c (-20,20), ylim = c(0,2), lty=2)
+lines(density(m1post$a0), lty=1)
+lines(density(m3prior$a0), col = "blue", lty=2)
+lines(density(m3post$a0), col = "blue", lty=1)
+
+#showing density plots for b0
+plot(density(m1prior$b0), xlim = c (-20,20), ylim = c(0,2), lty=2)
+lines(density(m1post$b0), lty=1)
+lines(density(m3prior$b0), col = "blue", lty=2)
+lines(density(m3post$b0), col = "blue", lty=1)
+
+#showing density plots for a1
+plot(density(m1prior$a1), xlim = c (-3,3), ylim = c(0,2), lty=2)
+lines(density(m1post$a1), lty=1)
+lines(density(m3prior$a1), col = "blue", lty=2)
+lines(density(m3post$a1), col = "blue", lty=1)
+
+#showing density plots for b1
+plot(density(m1prior$b1), xlim = c (-3,3), ylim = c(0,2), lty=2)
+lines(density(m1post$b1), lty=1)
+lines(density(m3prior$b1), col = "blue", lty=2)
+lines(density(m3post$b1), col = "blue", lty=1)
+
+
+## ---- mod_1_3_pair_plots --------
+# all "a" parameters - too big to show
+#pairs(fl[[1]]$fit, pars = c("a0","a1"))
+# a few parameters for each dose
+#low dose
+pairs(fl[[1]]$fit, pars = c("a0[1]","a0[2]","a0[3]","a0[4]","a1"))
+#medium dose
+pairs(fl[[1]]$fit, pars = c("a0[8]","a0[9]","a0[10]","a0[11]","a1"))
+#high dose
+pairs(fl[[1]]$fit, pars = c("a0[16]","a0[17]","a0[18]","a0[19]","a1"))
+
 
 
 ## ---- mod_1_3_exploration --------
@@ -35,9 +106,6 @@ print(precis(fl[[3]]$fit,depth=1),digits = 2)
 print(c(a0mean,b0mean))
 
 
-## ---- mod_1_3_comparison --------
-comp13 = compare(fl[[1]]$fit,fl[[3]]$fit)
-print(comp13)
 
 
 ## ---- mod_2_2a_exploration -------
@@ -49,12 +117,58 @@ b0mean = mean(precis(fl[[2]]$fit,depth=2,"b0")$mean)
 #rest of model 2
 print(precis(fl[[2]]$fit,depth=1),digits = 2)
 print(c(a0mean,b0mean))
-
 #model 2a
 print(precis(fl[[5]]$fit,depth=1),digits = 2)
-compare(fl[[2]]$fit,fl[[5]]$fit)
 
 
+## ---- mod_comparison --------
+compare(fl[[1]]$fit,fl[[3]]$fit,fl[[2]]$fit,fl[[5]]$fit)
+
+
+## ---- mod_4_4a_prior --------
+#get priors and posteriors for models 4 and 4a
+m4prior <- extract.prior(fl[[4]]$fit, n = 1e4)
+m4post <- extract.samples(fl[[4]]$fit, n = 1e4)
+
+m4aprior <- extract.prior(fl[[6]]$fit, n = 1e4)
+m4apost <- extract.samples(fl[[6]]$fit, n = 1e4)
+
+## ---- mod_4_4a_prior_plots --------
+#showing density plots for a0
+plot(density(m4prior$mu_a), xlim = c (-10,10), ylim = c(0,2), lty=2)
+lines(density(m4post$mu_a), lty=1)
+lines(density(m4aprior$mu_a), col = "blue", lty=2)
+lines(density(m4apost$mu_a), col = "blue", lty=1)
+
+#showing density plots for b0
+plot(density(m4prior$mu_b), xlim = c (-10,10), ylim = c(0,2), lty=2)
+lines(density(m4post$mu_b), lty=1)
+lines(density(m4aprior$mu_b), col = "blue", lty=2)
+lines(density(m4apost$mu_b), col = "blue", lty=1)
+
+#showing density plots for a1
+plot(density(m4prior$a1), xlim = c (-3,3), ylim = c(0,2), lty=2)
+lines(density(m4post$a1), lty=1)
+lines(density(m4aprior$a1), col = "blue", lty=2)
+lines(density(m4apost$a1), col = "blue", lty=1)
+
+#showing density plots for b1
+plot(density(m4prior$b1), xlim = c (-3,3), ylim = c(0,2), lty=2)
+lines(density(m4post$b1), lty=1)
+lines(density(m4aprior$b1), col = "blue", lty=2)
+lines(density(m4apost$b1), col = "blue", lty=1)
+
+
+## ---- mod_4_4a_pair_plots --------
+# a few parameters for each dose
+#low dose
+pairs(fl[[4]]$fit, pars = c("a0[1]","a0[2]","a0[3]","a0[4]","a1"))
+#medium dose
+pairs(fl[[4]]$fit, pars = c("a0[8]","a0[9]","a0[10]","a0[11]","a1"))
+#high dose
+pairs(fl[[4]]$fit, pars = c("a0[16]","a0[17]","a0[18]","a0[19]","a1"))
+# mean of a0 prior
+pairs(fl[[4]]$fit, pars = c("mu_a","mu_b","a1","b1"))
 
 
 ## ---- mod_4_4a_exploration --------
@@ -71,13 +185,10 @@ compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit)
 
 
 ## ---- computepredictions --------
-# load the data we used for fitting
-simdat <- readRDS("simdat.Rds")
-#pull our the data set we used for fitting
-#if you fit a different one of the simulated datasets, change accordingly
-fitdat <- simdat$m3
 #small data adjustment for plotting
-plotdat <- fitdat %>% data.frame() %>% mutate(id = as.factor(id)) %>% mutate(dose = dose_cat)
+plotdat <- fitdat %>% data.frame()  %>% 
+                      mutate(id = as.factor(id))  %>%
+                      mutate(dose = dose_cat)
 
 #this will contain all the predictions from the different models
 fitpred = vector(mode = "list", length = length(fl))
@@ -92,7 +203,7 @@ for (n in 1:length(fl))
   #specifically, more time points so the curves are smoother
   timevec = seq(from = 0.1, to = max(fitdat$time), length=100)
   Ntot = max(fitdat$id)
-  #data used for predictions
+  #new data used for predictions
   preddat = data.frame( id = sort(rep(seq(1,Ntot),length(timevec))),
                         time = rep(timevec,Ntot),
                         dose_adj = 0
@@ -114,6 +225,7 @@ for (n in 1:length(fl))
 
   # estimate and CI for parameter variation
   # this uses the link function from rethinking
+  # we ask for predictions for the new data generated above
   linkmod <- rethinking::link(nowmodel, data = preddat)
 
   #computing mean and various credibility intervals
@@ -133,7 +245,7 @@ for (n in 1:length(fl))
   simmod <- rethinking::sim(nowmodel, data = preddat)
 
   # mean and credible intervals for outcome predictions
-  # mean should agree with above values
+  # modmeansim should agree with above modmean values
   modmeansim <- apply( simmod , 2 , mean )
   modPIsim <- apply( simmod , 2 , PI , prob=0.89 )
 
@@ -156,7 +268,7 @@ for (n in 1:length(fl))
 #list for storing all plots
 plotlist = vector(mode = "list", length = length(fl))
 
-#again looping over all models, making a plot for each
+#looping over all models, creating and storing a plot for each
 for (n in 1:length(fl))
 {
   #adding titles to plots
@@ -168,7 +280,7 @@ for (n in 1:length(fl))
     geom_ribbon(aes(x=predtime, ymin=Q89lo, ymax=Q89hi, fill = dose, color = NULL), alpha=0.3, show.legend = F) +
     #geom_ribbon(aes(x=time, ymin=Q97lo, ymax=Q97hi, fill = dose), alpha=0.2, show.legend = F) +
     geom_ribbon(aes(x=predtime, ymin=Qsimlo, ymax=Qsimhi, fill = dose, color = NULL), alpha=0.1, show.legend = F) +
-    geom_point(data = plotdat, aes(x = time, y = outcome, group = id, color = dose), shape = 1, size = 2) +
+    geom_point(data = plotdat, aes(x = time, y = outcome, group = id, color = dose), shape = 1, size = 2, stroke = 2) +
     scale_y_continuous(limits = c(-30,50)) +
     labs(y = "Virus load",
          x = "days post infection") +
@@ -193,3 +305,8 @@ plot(plotlist[[5]])
 ## ---- mod_4_4a_plots --------
 plot(plotlist[[4]])
 plot(plotlist[[6]])
+
+
+## ---- additional-code -------
+for (n in 1:length(fl)) {print(fl[[n]]$runtime)}
+

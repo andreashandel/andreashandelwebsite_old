@@ -43,8 +43,8 @@ m1_sigmaa = 1
 m1_sigmab = 1
 m1_a0 = rnorm(n=Ntot, m1_mua, m1_sigmaa)
 m1_b0 = rnorm(n=Ntot, m1_mub, m1_sigmaa)
-# saving main parameters
-m1pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m1_mua, b0_mu = m1_mub)
+# saving main parameters and sample sizes
+m1pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m1_mua, b0_mu = m1_mub, Nlow = Nlow, Nmed = Nmed, Nhigh = Nhigh)
 
 ## ---- m2pars --------
 m2_mua = 3
@@ -53,7 +53,7 @@ m2_sigmaa = 0.0001
 m2_sigmab = 0.0001
 m2_a0 = rnorm(n=Ntot, m2_mua, m2_sigmaa)
 m2_b0 = rnorm(n=Ntot, m2_mub, m2_sigmab)
-m2pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m2_mua, b0_mu = m2_mub)
+m2pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m2_mua, b0_mu = m2_mub, Nlow = Nlow, Nmed = Nmed, Nhigh = Nhigh)
 
 ## ---- m3pars --------
 m3_mua = 3
@@ -62,7 +62,7 @@ m3_sigmaa = 0.1
 m3_sigmab = 0.1
 m3_a0 = rnorm(n=Ntot, m3_mua, m3_sigmaa)
 m3_b0 = rnorm(n=Ntot, m3_mub, m3_sigmaa)
-m3pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m3_mua, b0_mu = m3_mub)
+m3pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m3_mua, b0_mu = m3_mub, Nlow = Nlow, Nmed = Nmed, Nhigh = Nhigh)
 
 ## ---- m1sims --------
 m1_alpha = m1_a0 + a1*(log(dosevec) - log(med_dose))

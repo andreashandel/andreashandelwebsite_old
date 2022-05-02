@@ -337,8 +337,8 @@ m1_sigmaa = 1
 m1_sigmab = 1
 m1_a0 = rnorm(n=Ntot, m1_mua, m1_sigmaa)
 m1_b0 = rnorm(n=Ntot, m1_mub, m1_sigmaa)
-# saving main parameters
-m1pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m1_mua, b0_mu = m1_mub)</code></pre>
+# saving main parameters and sample sizes
+m1pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m1_mua, b0_mu = m1_mub, Nlow = Nlow, Nmed = Nmed, Nhigh = Nhigh)</code></pre>
 <p>Note a few things here. First, the priors are narrower than I specified above. As you will see in the figures below, even with these more narrow priors, results for model 1 still look way too variable. We can use the wider priors when we fit the model, to allow the data to dominate the fits. But for data generation, going too wild seems pointless.</p>
 <p>Second, you noticed that I did sample from distributions. That’s not necessary, I could have also specified values for each of the parameters, like I did for <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>, as long as the values can be thought of as coming from the underlying distribution. If I sample, I need to make sure to set a random seed (which I did above) to ensure reproducibility.</p>
 <p>Ok, now for model 2. We have 2 versions, model 2a collapses the individual-level parameters into a single population one. We’ll explore that model when doing the fitting, for simulating the data I’m just going with model 2. As just mentioned, we could sample or fix parameters. Since parameters <span class="math inline">\(\mu_a\)</span> and <span class="math inline">\(\mu_b\)</span> are only single values, there is little point in sampling them. Instead, I’m fixing them.</p>
@@ -348,7 +348,7 @@ m2_sigmaa = 0.0001
 m2_sigmab = 0.0001
 m2_a0 = rnorm(n=Ntot, m2_mua, m2_sigmaa)
 m2_b0 = rnorm(n=Ntot, m2_mub, m2_sigmab)
-m2pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m2_mua, b0_mu = m2_mub)</code></pre>
+m2pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m2_mua, b0_mu = m2_mub, Nlow = Nlow, Nmed = Nmed, Nhigh = Nhigh)</code></pre>
 <p>Finally, model 3 is like model 1 but with less wide priors.</p>
 <pre class="r"><code>m3_mua = 3
 m3_mub = 1
@@ -356,7 +356,7 @@ m3_sigmaa = 0.1
 m3_sigmab = 0.1
 m3_a0 = rnorm(n=Ntot, m3_mua, m3_sigmaa)
 m3_b0 = rnorm(n=Ntot, m3_mub, m3_sigmaa)
-m3pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m3_mua, b0_mu = m3_mub)</code></pre>
+m3pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m3_mua, b0_mu = m3_mub, Nlow = Nlow, Nmed = Nmed, Nhigh = Nhigh)</code></pre>
 <p>Note that for the purpose of simulating data, model 4 is basically the same as model 3. We would need to sample (or pick) values for the parameters <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\sigma_a\)</span>, <span class="math inline">\(\mu_b\)</span>, and <span class="math inline">\(\sigma_b\)</span> and then use them to sample (or set) values for <span class="math inline">\(a_{i,0}\)</span> and <span class="math inline">\(b_{i,0}\)</span>. This setup makes sense during fitting, but for generating data, it isn’t really different than what I already did. You can conceptually assume I did sample parameters and happen to get the values shown for model 3. Thus, model 4 collapses to the models we already specified.</p>
 <p>We could of course go through all those steps of sampling from each distribution to get parameter values. Nothing wrong with that. But if we change the random seed, values change. And we always need to carefully to look at the values that were actually sampled to compare with our estimates from fitting. It is generally easier during the data generation process to assume conceptually that values correspond to samples from distributions, but then set the value manually. I could have not sampled the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> above and fixed, but I think showing some of the sampling steps makes it clearer how the model can be used to generate simulated data.</p>
 <p>That is all to say, for the purpose of simulating data, model 4 isn’t different from the others, and thus we can skip model 4.</p>
