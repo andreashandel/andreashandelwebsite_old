@@ -3,7 +3,7 @@ title: Bayesian analysis of longitudinal multilevel data using brms and rethinki
 summary: Part 1 of a tutorial showing how to specify models and simulate data for a longitudinal multilevel setup.
 author: Andreas Handel
 date: '2022-02-22'
-lastMod: "2022-02-22"
+lastMod: "2022-05-02"
 slug: longitudinal-multilevel-bayesian-analysis-1
 categories: 
 - R
@@ -328,8 +328,8 @@ dosevec_cat = ordered(c(rep(&quot;low&quot;, Nlow),rep(&quot;medium&quot;,Nmed),
 <p>The parameters <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> show up in all models. For easy comparison between models, I’m setting them to the same value for all models.</p>
 <p>For the estimation procedure (see <a href="/posts/longitudinal-multilevel-bayesian-analysis-1/">part 2</a>), we assume that those parameters follow the distributions shown above. We could sample a single value for each of them from such a distribution. But to reduce variability and to more easily compare estimated parameters to those used to simulate the data, I’m setting them to specific values, which you can conceptually think of as being a single sample from the distributions we discussed above.</p>
 <pre class="r"><code>sigma = 1
-a1 = 0.2
-b1 = -0.2</code></pre>
+a1 = 0.1
+b1 = -0.1</code></pre>
 <p>Now well get values for the other parameters. For model 1, we have <span class="math inline">\(N\)</span> parameters for <span class="math inline">\(a_{i,0}\)</span> and <span class="math inline">\(b_{i,0}\)</span>, with priors that are very flat. We set them as follows</p>
 <pre class="r"><code>m1_mua = 3
 m1_mub = 1
@@ -365,8 +365,8 @@ m3pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m3_mua, b0_mu = m3_mub, Nlow
 <h2>Creating simulated data</h2>
 <p>Now we can combine the parameters as specified in the equations above to get simulated trajectories for each individual, for each of the models.</p>
 <p>Here is the code that computes the mean and the outcome for model 1, the wide model.</p>
-<pre class="r"><code>m1_alpha = m1_a0 + a1*(log(dosevec) - log(med_dose))
-m1_beta = m1_b0 + b1*(log(dosevec) - log(med_dose))
+<pre class="r"><code>m1_alpha = m1_a0 + a1*(dosevec - med_dose)
+m1_beta = m1_b0 + b1*(dosevec - med_dose)
 #doing matrix multiplication to get time-series for each individual
 #for that to work, the timevec vector needs to be transposed
 m1_mu =  exp(m1_alpha) %*% t(log(timevec)) - exp(m1_beta) %*% t(timevec)
@@ -384,8 +384,8 @@ m1_dat &lt;- data.frame(id = rep(1:Ntot,length(timevec)),
                      mu = as.vector(m1_mu), outcome = rnorm(n=length(m1_mu),mean=as.vector(m1_mu),sd=sigma)  )</code></pre>
 <p>Now we just repeat the same code again for the other models.</p>
 <pre class="r"><code>#model 2
-m2_alpha = m2_a0 + a1*(log(dosevec) - log(med_dose))
-m2_beta = m2_b0 + b1*(log(dosevec) - log(med_dose))
+m2_alpha = m2_a0 + a1*(dosevec - med_dose)
+m2_beta = m2_b0 + b1*(dosevec - med_dose)
 m2_mu =  exp(m2_alpha) %*% t(log(timevec)) - exp(m2_beta) %*% t(timevec)
 m2_dat &lt;- data.frame(id = rep(1:Ntot,length(timevec)),
                      dose = rep(dosevec,length(timevec)), dose_adj = rep(dosevec,length(timevec))-med_dose, dose_cat =  rep(dosevec_cat,length(timevec)),
@@ -393,8 +393,8 @@ m2_dat &lt;- data.frame(id = rep(1:Ntot,length(timevec)),
                      mu = as.vector(m2_mu), outcome = rnorm(n=length(m2_mu),mean=as.vector(m2_mu),sd=sigma)  )
 
 #model 3
-m3_alpha = m3_a0 + a1*(log(dosevec) - log(med_dose))
-m3_beta = m3_b0 + b1*(log(dosevec) - log(med_dose))
+m3_alpha = m3_a0 + a1*(dosevec - med_dose)
+m3_beta = m3_b0 + b1*(dosevec - med_dose)
 m3_mu =  exp(m3_alpha) %*% t(log(timevec)) - exp(m3_beta) %*% t(timevec)
 m3_y = apply(m3_mu,2,rnorm,sigma)
 m3_dat &lt;- data.frame(id = rep(1:Ntot,length(timevec)),
@@ -442,7 +442,7 @@ p3 &lt;- ggplot(m3_dat) +
 <p>Finally, we’ll save one of the plots (this is mainly so I can show it at the beginning of the tutorial).</p>
 <p>And then, let’s combine all the simulated data into a single list containing all data frames, and save it. I’m also saving the parameters for each model, so we can quickly retrieve them when we compare with the model estimates.</p>
 <pre class="r"><code>ggsave(file = paste0(&quot;simdata_m3.png&quot;), p3, dpi = 300, units = &quot;in&quot;, width = 7, height = 7) </code></pre>
-<pre><code>## Warning: Removed 52 row(s) containing missing values (geom_path).</code></pre>
+<pre><code>## Warning: Removed 53 row(s) containing missing values (geom_path).</code></pre>
 <pre><code>## Warning: Removed 52 rows containing missing values (geom_point).</code></pre>
 <pre class="r"><code>simdat &lt;- list(m1 = m1_dat, m2 = m2_dat, m3 = m3_dat, m1pars = m1pars, m2pars = m2pars, m3pars = m3pars)
 saveRDS(simdat, &quot;simdat.Rds&quot;)</code></pre>

@@ -3,7 +3,7 @@ title: Bayesian analysis of longitudinal multilevel data using brms and rethinki
 summary: Part 2 of a tutorial showing how to fit Bayesian models using the `rethinking` package.
 author: Andreas Handel
 date: '2022-02-23'
-lastMod: "2022-04-01"
+lastMod: "2022-05-02"
 slug: longitudinal-multilevel-bayesian-analysis-2
 categories: 
 - R
@@ -137,7 +137,8 @@ Again, this model is mathematically the same as the original model 4. If this is
 
 ### Model 5
 
-Another model, which I'm calling model 5 here, is one that does not include the dose effect. That means, parameters $a_1$ and $b_1$ are gone. The reason I'm doing this is because on initial fitting of the above models, I could not obtain estimates for the dose parameters I used for the simulation. I noticed strong correlations between posterior distributions of the model parameters. I suspected an issue with non-identifiable parameters (i.e, trying to estimate more parameters than the data supports). To figure out what was going on, I wanted to see how a model without the dose component would perform. Otherwise I'm following the setup of model 1.
+Another model, which I'm calling model 5 here, is one that does not include the dose effect. That means, parameters $a_1$ and $b_1$ are gone. Otherwise I'm following the setup of model 1. The reason I'm doing this is because on initial fitting of the above models, I could not obtain estimates for the dose parameters I used for the simulation. I noticed strong correlations between posterior distributions of the model parameters. I suspected an issue with non-identifiable parameters (i.e, trying to estimate more parameters than the data supports). To figure out what was going on, I wanted to see how a model without the dose component would perform. It turned out that the main reason things didn't look right was because I had a typo in the code that generated the data, so what I thought was the generating model actually wasn't `r emoji::emoji('facepalm')`. A helpful colleague and reader pointed this out. Once I fixed it, things made more sense. But I figured it's instructive to keep this model anyway.
+
 
 ```{r, model-5}
 ```
@@ -194,7 +195,7 @@ You should explore your model fits carefully. Look at the trace-plots or trank-p
 
 I'm showing a few of those explorations to illustrate what I mean. For any real fitting, it is important to carefully look at all the output and make sure everything worked as expected and makes sense.
 
-To keep output manageable, I'm using model 5 (2a) here, which has no individual-level parameters, thus only a total of 5. 
+To keep output manageable, I'm using model 2a here, which has no individual-level parameters, thus only a total of 5. 
 
 ```{r, diagnostics}
 ```
@@ -229,7 +230,7 @@ Now we can plot the distributions. Note that for the individual-level parameters
 ```{r mod_1_3_prior_plots, message = FALSE}
 ```
 
-We set up the models to have wider $a_0$ and $b_0$ priors for model 1, the same priors for the $a_1$ and $b_1$ parameters. We can see that in the figures. Comparing the results for the 2 models, We find that changing the priors has an impact on the posterior distributions. I don't think that's a good sign. We want the data to dominate the results, the priors should just be there to ensure the models explore the right parameter space and don't do anything crazy. The fact that the same model, started with different priors, leads to different posterior distributions is in my opinion concerning. It suggests that we are overfitting and have non-identifiability problems here.
+We set up the models to have wider $a_0$ and $b_0$ priors for model 1, the same priors for the $a_1$ and $b_1$ parameters. We can see that in the figures. Comparing the results for the 2 models, We find that changing the priors has an impact on the posterior distributions, especially for $a_1$ and $b_1$. Not only dies model 3 lead to more peaked posteriors, they are also not centered at the same values. I don't think that's a good sign. We want the data to dominate the results, the priors should just be there to ensure the models explore the right parameter space and don't do anything crazy. The fact that the same model, started with different priors, leads to different posterior distributions is in my opinion concerning. It might suggest that we are overfitting and have non-identifiability problems here.
 
 One way to check that further is to look at potential correlations between parameter posterior distributions, e.g., using a `pairs()` plot as shown above. 
 Here are such plots for the parameters associated with $\alpha$ for model 1. I only plot a few for each dose, otherwise the plots won't be legible inside this html document. 
@@ -240,7 +241,7 @@ But you can try for yourself, if you make the plot large enough you can fit them
 
 Recall that we set up the model such that dose is non-zero for low and high dose, while for the intermediate dose it is zero. What seems to happen is that if the dose effect, i.e., $a_1$, is present, there is a strong correlation among that parameter and the individual-level parameters for that dose. That part makes some sense to me. Either $a_0$ or $a_1$ can change $\alpha$ and thus the trajectory, thus if one is low, the other might be high, and the reverse.
 
-What I'm not clear about is why the individual parameter values also correlate strongly with each other. I would have expected each of them to account for individual level variation, and as such not depend much on the value of another individual level parameter. They somehow seem to interact through $a_1$, given that the correlation disappears for the medium dose, where the $a_1$ term is zero. I don't as of yet fully understand what's going on `r emoji::emoji('shrug')`, but it is clearly another sign of that we are overfitting and have non-identifiability problems.
+What I'm not clear about is why the individual parameter values also correlate strongly with each other. I would have expected each of them to account for individual level variation, and as such not depend much on the value of another individual level parameter. They somehow seem to interact through $a_1$, given that the correlation disappears for the medium dose, where the $a_1$ term is zero. I don't as of yet fully understand what's going on `r emoji::emoji('shrug')`, but it is another sign of that we are overfitting and have non-identifiability problems.
 
 
 
@@ -250,7 +251,7 @@ Instead of printing all the $N$ different values of $a_{0,i}$ and $b_{0,i}$, I c
 ```{r mod_1_3_exploration}
 ```
 
-The models seem to have converged ok, based on `Rhat` values of 1. Some parameters sampled better than others, as can be seen by the varying `n_eff` values. I used `r chains` chains of `r iter-warmup` post-warmup samples for each chain, so the actual samples are `r print(chains * (iter-warmup))`. If `n_eff` is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it's possible to get more effective samples than actual samples.)
+The models seem to have converged ok, based on `Rhat` values of 1. Some parameters sampled better than others, as can be seen by the varying `n_eff` values. I used `r chains` chains of `r iter-warmup` post-warmup samples for each chain, so the actual samples are `r as.character(chains * (iter-warmup))`. If `n_eff` is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it's possible to get more effective samples than actual samples.)
 
 We find that estimates for $a_{0}$, $b_0$ and $\sigma$ are similar, $a_1$ and $b_1$ differ more.  
 
@@ -264,7 +265,7 @@ Again, note that the only thing we changed between models 1 and 3 are to make th
 
 Before we move on, let's reflect on the truth, i.e. the actual values of the parameters, which we know here since we created/simulated the data. To generate the data, we used these parameter values. $\sigma =$ `r simdat$m3pars['sigma']`, $\mu_a =$ `r pars['a0_mu']`, $\mu_b =$ `r pars['b0_mu']`, $a_1 =$ `r pars['a1']`, $b_1 =$ `r pars['b1']`. We also said that our main scientific question is if there is a dose effect, i.e. non-zero $a_1$ and $b_1$. 
 
-The models find estimates of $\mu_a$, $\mu_b$  and $\sigma$ that are close to what we used. The models also estimate $a_1$ centered around a positive value and $b_1$ on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models, we aren't able to convincingly recover the parameters used to generate the data.
+The models find estimates of $\mu_a$, $\mu_b$  and $\sigma$ that are close to what we used. The models also estimate $a_1$ centered around a positive value and $b_1$ on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models, we aren't able to convincingly recover the parameters used to generate the data. I'm not sure if increasing the sampling would help, but it's already taking quite long to run, especially for model 1, so I don't really want to wait much longer. As we'll see below, alternative models do better.
 
 
 ## Models 2 and 2a
@@ -280,14 +281,14 @@ First, both models produce similar estimates. Since model 2a is simpler and does
 
 Both models do a very poor job estimating $\sigma$. That's because we don't allow the models to have the flexibility needed to fit the data, so it has to account for any variation between its estimated mean trajectory and the real data by making $\sigma$ large.
 
-Since the models are more constrained compared to models 1 and 3, they produce estimates for $a_1$ and $b_1$ that are tighter, though not close to the true values either. However, overall these models are not as good. We can for instance look at this using the `compare` function:
+Since the models are more constrained compared to models 1 and 3, they produce estimates for $a_1$ and $b_1$ that are tighter. However, overall these models are not good. We can for instance look at this using the `compare` function:
 
 ```{r, mod_comparison}
 ```
 
 I'm not going to discuss things in detail (see [Statistical Rethinking](https://xcelab.net/rm/statistical-rethinking/)), but a lower WAIC means a model that fits best in the sense that it strikes a good balance between fitting the data while not overfitting. As you can see, models 1 and 3 perform very similarly and models 2 and 2a are much worse.
 
-The larger WAIC indicates either strong overfitting or underfitting. In this case, it's underfitting. The models are not flexible enough to capture the individual-level variation. If we did indeed not want to account for individual-level variation, we should go with a model that simply doesn't include it, i.e. model 2a. The contrived model 2 with very narrow priors is just a bad model, and I'm really only exploring it here for demonstration purposes.
+The larger WAIC indicates either strong overfitting or underfitting. In this case, it's underfitting. The models are not flexible enough to capture the individual-level variation. You'll see that clearly in the plots shown further below. If we did indeed not want to account for individual-level variation, we should go with a model that simply doesn't include it, i.e. model 2a. The contrived model 2 with very narrow priors is just a bad model, and I'm really only exploring it here for demonstration purposes.
 
 
 
@@ -316,8 +317,7 @@ We can also explore pair plots again, showing them here for model 4.
 ```{r mod_4_4a_pair_plots, message = FALSE}
 ```
 
-We still see the same issue with correlations among the parameters for dose levels where $a_1$ is acting, though the correlations are not as extreme. They are also minor between the overall estimates for the mean of the $a_0$ and $b_0$ parameters and $a_1$ and $b_1$. I interpret to mean that the adaptive sampling helped somewhat with the identifiability problem, though it seems not fully.
-
+We still see the same issue with correlations among the parameters for dose levels where $a_1$ is acting, though the correlations are not as extreme. They are also minor between the overall estimates for the mean of the $a_0$ and $b_0$ parameters and $a_1$ and $b_1$. I interpret this to mean that the adaptive sampling helped somewhat with the identifiability problem, though it seems to not fully resolve it.
 
 
 We can also again look at the numerical outputs from the `precis` function.
@@ -327,7 +327,7 @@ We can also again look at the numerical outputs from the `precis` function.
 
 The numerics confirm that the two models lead to essentially the same results. The values for `n_eff` differ between models, though neither model is consistently larger. This suggests that each model formulation had advantages in sampling for some of the parameters.
 
-If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true $\mu_a$, $\mu_b$ and $\sigma$ are estimated fairly well. Estimates for $a_1$ and $b_1$ are still off, but the credible intervals are less wide, such that those estimates are now reliably positive/negative. 
+If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true $\mu_a$, $\mu_b$ and $\sigma$ are estimated fairly well. Estimates for $a_1$ and $b_1$ are now also pretty good, and the credible intervals are less wide, such that those estimates are now reliably positive/negative. 
 
 Now let's briefly run the `compare` function too and include model 3 as well:
 
@@ -336,9 +336,31 @@ Now let's briefly run the `compare` function too and include model 3 as well:
 
 We do find that model 4/4a performs a bit better. Note that model 4 has more actual parameters, but the effective parameters (which is described by `pWAIC`) is smaller. Models 4 and 4a also run much faster during fitting.
 
-Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely. We still don't yet retrieve the values we used to simulate the data. At this point, it's not clear to me if with more sampling we could get there, or if our fairly low $N$ value doesn't allow better estimation (that doesn't seem to be the case, see my explorations of simulated data with larger $N$ in [part 4](/posts/longitudinal-multilevel-bayesian-analysis-4/)). I am a bit stumped by the fact that not even the credible intervals for $a_1$ and $b_1$ contain the true values for these parameters. My current best guess is that there are still some parameter identifiability and overfitting issues. There might be too many parameters to estimate, and the fact that we gave each individual their own $a_{0,i}$ and $b_{0,i}$ values allows those parameters to "absorb" some of the dose-dependent signal in $a_1$ and $b_1$. But I'm not fully sure that explanation is right. I need to dig into that a bit more. And if this is true, the question is how should one formulate a model that overcomes the problem? (Feedback appreciated).
+Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely and efficiently. 
+
+Based on the pair plots, there might still be some parameter identifiability and overfitting issues. There might be too many parameters to estimate, and the fact that we gave each individual their own $a_{0,i}$ and $b_{0,i}$ values allows those parameters to "absorb" some of the dose-dependent signal in $a_1$ and $b_1$. But overall, model 4/4a seem to perform rather well. 
 
 
+## Model 5
+
+As stated above, due to a typo in my code, the above models, including 4/4a, initially produced estimates for $a_1$ and $b_1$ that were not close to those used to generate the data. Because if the pair plots, I suspected non-identifiability issues and wanted to explore what would happen if I removed those parameters.
+
+If we now look at the pairs plots, maybe not surprisingly, the correlations between individual $a_0$ parameters are gone.
+
+```{r mod_5_pair_plots, message = FALSE}
+```
+
+The model estimates the parameters reasonably well
+
+```{r mod_5_exploration}
+```
+
+It doesn't seem quite as good as the previous models.
+
+```{r mod_5_comparison}
+```
+
+And of course the main problem with this model: It can't answer any question about the role of dose, since we removed that component from the model! 
 
 
 # Computing predictions
@@ -395,7 +417,18 @@ These models look good again, and very similar to models 1 and 3.
 ```
 
 
-So overall, the figures make sense and indicates that apart from models 2/2a, the other models are performing well. I consider model 4/4a the most suitable one. It seems that if we want to do prediction, our models are fine. But if we wanted to estimate the model parameters, specifically $a_1$ and $b_1$, the models can't quite deliver. For another example and more discussion in that, see e.g. Section 6.1. in _Statistical Rethinking_, as well as 9.5.4 (all referring to the 2nd edition of the book).
+## Model 5
+
+The model fits look fine, suggesting that one parameter for each individual is enough to capture the data. That's not surprising. However, this of course does not allow us to ask and answer any scientific questions about the role of dose.
+
+```{r, mod_5_plots, warning=FALSE}
+```
+
+
+
+So overall, the figures make sense It seems that if we want to do prediction, all models that include individual variability are fine, models 2/2a are not great. If we wanted to estimate the model parameters, specifically $a_1$ and $b_1$, models 1 and 3 and of course 5 don't work. In that case, model 2/2a works ok. I consider model 4/4a the best one overall.
+
+For another example and more discussion of estimation versus prediction, see e.g. Section 6.1. in _Statistical Rethinking_, as well as 9.5.4 (all referring to the 2nd edition of the book).
 
 
 

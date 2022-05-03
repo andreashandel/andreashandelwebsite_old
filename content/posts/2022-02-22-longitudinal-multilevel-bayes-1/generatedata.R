@@ -33,8 +33,8 @@ dosevec_cat = ordered(c(rep("low", Nlow),rep("medium",Nmed),rep("high",Nhigh)),l
 
 ## ---- commonpars --------
 sigma = 1
-a1 = 0.2
-b1 = -0.2
+a1 = 0.1
+b1 = -0.1
 
 ## ---- m1pars --------
 m1_mua = 3
@@ -65,8 +65,8 @@ m3_b0 = rnorm(n=Ntot, m3_mub, m3_sigmaa)
 m3pars = c(sigma = sigma, a1 = a1, b1 = b1, a0_mu = m3_mua, b0_mu = m3_mub, Nlow = Nlow, Nmed = Nmed, Nhigh = Nhigh)
 
 ## ---- m1sims --------
-m1_alpha = m1_a0 + a1*(log(dosevec) - log(med_dose))
-m1_beta = m1_b0 + b1*(log(dosevec) - log(med_dose))
+m1_alpha = m1_a0 + a1*(dosevec - med_dose)
+m1_beta = m1_b0 + b1*(dosevec - med_dose)
 #doing matrix multiplication to get time-series for each individual
 #for that to work, the timevec vector needs to be transposed
 m1_mu =  exp(m1_alpha) %*% t(log(timevec)) - exp(m1_beta) %*% t(timevec)
@@ -86,8 +86,8 @@ m1_dat <- data.frame(id = rep(1:Ntot,length(timevec)),
 
 ## ---- m2m3sims --------
 #model 2
-m2_alpha = m2_a0 + a1*(log(dosevec) - log(med_dose))
-m2_beta = m2_b0 + b1*(log(dosevec) - log(med_dose))
+m2_alpha = m2_a0 + a1*(dosevec - med_dose)
+m2_beta = m2_b0 + b1*(dosevec - med_dose)
 m2_mu =  exp(m2_alpha) %*% t(log(timevec)) - exp(m2_beta) %*% t(timevec)
 m2_dat <- data.frame(id = rep(1:Ntot,length(timevec)),
                      dose = rep(dosevec,length(timevec)), dose_adj = rep(dosevec,length(timevec))-med_dose, dose_cat =  rep(dosevec_cat,length(timevec)),
@@ -95,8 +95,8 @@ m2_dat <- data.frame(id = rep(1:Ntot,length(timevec)),
                      mu = as.vector(m2_mu), outcome = rnorm(n=length(m2_mu),mean=as.vector(m2_mu),sd=sigma)  )
 
 #model 3
-m3_alpha = m3_a0 + a1*(log(dosevec) - log(med_dose))
-m3_beta = m3_b0 + b1*(log(dosevec) - log(med_dose))
+m3_alpha = m3_a0 + a1*(dosevec - med_dose)
+m3_beta = m3_b0 + b1*(dosevec - med_dose)
 m3_mu =  exp(m3_alpha) %*% t(log(timevec)) - exp(m3_beta) %*% t(timevec)
 m3_y = apply(m3_mu,2,rnorm,sigma)
 m3_dat <- data.frame(id = rep(1:Ntot,length(timevec)),

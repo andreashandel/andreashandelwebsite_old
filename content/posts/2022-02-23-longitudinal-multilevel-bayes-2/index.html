@@ -3,7 +3,7 @@ title: Bayesian analysis of longitudinal multilevel data using brms and rethinki
 summary: Part 2 of a tutorial showing how to fit Bayesian models using the `rethinking` package.
 author: Andreas Handel
 date: '2022-02-23'
-lastMod: "2022-04-01"
+lastMod: "2022-05-02"
 slug: longitudinal-multilevel-bayesian-analysis-2
 categories: 
 - R
@@ -180,7 +180,7 @@ m4a &lt;- alist(
 </div>
 <div id="model-5" class="section level3">
 <h3>Model 5</h3>
-<p>Another model, which I’m calling model 5 here, is one that does not include the dose effect. That means, parameters <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are gone. The reason I’m doing this is because on initial fitting of the above models, I could not obtain estimates for the dose parameters I used for the simulation. I noticed strong correlations between posterior distributions of the model parameters. I suspected an issue with non-identifiable parameters (i.e, trying to estimate more parameters than the data supports). To figure out what was going on, I wanted to see how a model without the dose component would perform. Otherwise I’m following the setup of model 1.</p>
+<p>Another model, which I’m calling model 5 here, is one that does not include the dose effect. That means, parameters <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are gone. Otherwise I’m following the setup of model 1. The reason I’m doing this is because on initial fitting of the above models, I could not obtain estimates for the dose parameters I used for the simulation. I noticed strong correlations between posterior distributions of the model parameters. I suspected an issue with non-identifiable parameters (i.e, trying to estimate more parameters than the data supports). To figure out what was going on, I wanted to see how a model without the dose component would perform. It turned out that the main reason things didn’t look right was because I had a typo in the code that generated the data, so what I thought was the generating model actually wasn’t 🤦. A helpful colleague and reader pointed this out. Once I fixed it, things made more sense. But I figured it’s instructive to keep this model anyway.</p>
 <pre class="r"><code>#no dose effect
 #separate intercept for each individual/id
 #2xN+1 parameters
@@ -323,7 +323,7 @@ pars &lt;- simdat$m3pars</code></pre>
 <p>All fits are in the list called <code>fl</code>. For each model the actual fit is in <code>fit</code>, the model name in <code>model</code> and the run time in <code>runtime</code>.</p>
 <p>You should explore your model fits carefully. Look at the trace-plots or trank-plots with the <code>traceplot()</code> and <code>trankplot()</code> functions in <code>rethinking</code>. Make sure the chains are looking ok. You can also use the <code>summary</code> function to get some useful information on our model. To go further, you can call <code>stancode()</code> to get the actual Stan code for the model. This can be helpful to both learn Stan, and to check if the model translates into Stan code the way you expected it to.</p>
 <p>I’m showing a few of those explorations to illustrate what I mean. For any real fitting, it is important to carefully look at all the output and make sure everything worked as expected and makes sense.</p>
-<p>To keep output manageable, I’m using model 5 (2a) here, which has no individual-level parameters, thus only a total of 5.</p>
+<p>To keep output manageable, I’m using model 2a here, which has no individual-level parameters, thus only a total of 5.</p>
 <pre class="r"><code># Model 5 summary
 show(fl[[5]]$fit)</code></pre>
 <pre><code>## Hamiltonian Monte Carlo approximation
@@ -331,11 +331,11 @@ show(fl[[5]]$fit)</code></pre>
 ## 
 ## Sampling durations (seconds):
 ##         warmup sample total
-## chain:1  13.14   5.55 18.70
-## chain:2  13.80   8.70 22.50
-## chain:3  12.97   5.22 18.19
-## chain:4  13.57   9.13 22.70
-## chain:5  13.13   5.79 18.92
+## chain:1  14.40   9.14 23.54
+## chain:2  13.92   5.14 19.06
+## chain:3  13.75   5.89 19.64
+## chain:4  14.10   5.74 19.85
+## chain:5  13.18   8.06 21.24
 ## 
 ## Formula:
 ## outcome ~ dnorm(mu, sigma)
@@ -393,7 +393,7 @@ lines(density(m1post$b1), lty=1)
 lines(density(m3prior$b1), col = &quot;blue&quot;, lty=2)
 lines(density(m3post$b1), col = &quot;blue&quot;, lty=1)</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_1_3_prior_plots-4.png" width="672" /></p>
-<p>We set up the models to have wider <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> priors for model 1, the same priors for the <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> parameters. We can see that in the figures. Comparing the results for the 2 models, We find that changing the priors has an impact on the posterior distributions. I don’t think that’s a good sign. We want the data to dominate the results, the priors should just be there to ensure the models explore the right parameter space and don’t do anything crazy. The fact that the same model, started with different priors, leads to different posterior distributions is in my opinion concerning. It suggests that we are overfitting and have non-identifiability problems here.</p>
+<p>We set up the models to have wider <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> priors for model 1, the same priors for the <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> parameters. We can see that in the figures. Comparing the results for the 2 models, We find that changing the priors has an impact on the posterior distributions, especially for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. Not only dies model 3 lead to more peaked posteriors, they are also not centered at the same values. I don’t think that’s a good sign. We want the data to dominate the results, the priors should just be there to ensure the models explore the right parameter space and don’t do anything crazy. The fact that the same model, started with different priors, leads to different posterior distributions is in my opinion concerning. It might suggest that we are overfitting and have non-identifiability problems here.</p>
 <p>One way to check that further is to look at potential correlations between parameter posterior distributions, e.g., using a <code>pairs()</code> plot as shown above.
 Here are such plots for the parameters associated with <span class="math inline">\(\alpha\)</span> for model 1. I only plot a few for each dose, otherwise the plots won’t be legible inside this html document.
 But you can try for yourself, if you make the plot large enough you can fit them all. You can also make plots for model 3 and for the <span class="math inline">\(b\)</span> parameters, those look very similar.</p>
@@ -410,7 +410,7 @@ pairs(fl[[1]]$fit, pars = c(&quot;a0[8]&quot;,&quot;a0[9]&quot;,&quot;a0[10]&quo
 pairs(fl[[1]]$fit, pars = c(&quot;a0[16]&quot;,&quot;a0[17]&quot;,&quot;a0[18]&quot;,&quot;a0[19]&quot;,&quot;a1&quot;))</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_1_3_pair_plots-3.png" width="672" /></p>
 <p>Recall that we set up the model such that dose is non-zero for low and high dose, while for the intermediate dose it is zero. What seems to happen is that if the dose effect, i.e., <span class="math inline">\(a_1\)</span>, is present, there is a strong correlation among that parameter and the individual-level parameters for that dose. That part makes some sense to me. Either <span class="math inline">\(a_0\)</span> or <span class="math inline">\(a_1\)</span> can change <span class="math inline">\(\alpha\)</span> and thus the trajectory, thus if one is low, the other might be high, and the reverse.</p>
-<p>What I’m not clear about is why the individual parameter values also correlate strongly with each other. I would have expected each of them to account for individual level variation, and as such not depend much on the value of another individual level parameter. They somehow seem to interact through <span class="math inline">\(a_1\)</span>, given that the correlation disappears for the medium dose, where the <span class="math inline">\(a_1\)</span> term is zero. I don’t as of yet fully understand what’s going on 🤷, but it is clearly another sign of that we are overfitting and have non-identifiability problems.</p>
+<p>What I’m not clear about is why the individual parameter values also correlate strongly with each other. I would have expected each of them to account for individual level variation, and as such not depend much on the value of another individual level parameter. They somehow seem to interact through <span class="math inline">\(a_1\)</span>, given that the correlation disappears for the medium dose, where the <span class="math inline">\(a_1\)</span> term is zero. I don’t as of yet fully understand what’s going on 🤷, but it is another sign of that we are overfitting and have non-identifiability problems.</p>
 <p>Let’s move on and now look at the posterior distributions in numerical form. For that, I use the <code>precis</code> function from <code>rethinking</code>.
 Instead of printing all the <span class="math inline">\(N\)</span> different values of <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span>, I compute their means. If you want to see them all, change to <code>depth=2</code> in the <code>precis</code> function.</p>
 <pre class="r"><code># Model 1
@@ -419,30 +419,30 @@ b0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##        mean    sd  5.5% 94.5% n_eff Rhat4
-## a1     0.21 0.733 -0.95   1.4  1401     1
-## b1    -0.16 0.737 -1.32   1.0  1798     1
-## sigma  0.97 0.047  0.90   1.0  8961     1</code></pre>
+## a1     0.25 0.748 -0.95  1.42  1557     1
+## b1    -0.20 0.738 -1.40  0.97  1823     1
+## sigma  0.97 0.048  0.90  1.05 10615     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.931869 1.027153</code></pre>
+<pre><code>## [1] 2.953377 1.006442</code></pre>
 <pre class="r"><code># Model 3
 a0mean = mean(precis(fl[[3]]$fit,depth=2,&quot;a0&quot;)$mean)
 b0mean = mean(precis(fl[[3]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[3]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
-<pre><code>##         mean    sd  5.5% 94.5% n_eff Rhat4
-## a1     0.096 0.109 -0.08  0.27  2019     1
-## b1    -0.025 0.105 -0.20  0.14  1849     1
-## sigma  0.973 0.047  0.90  1.05 10543     1</code></pre>
+<pre><code>##         mean    sd   5.5% 94.5% n_eff Rhat4
+## a1     0.144 0.105 -0.022 0.313  1774     1
+## b1    -0.079 0.108 -0.249 0.096  1867     1
+## sigma  0.972 0.046  0.900 1.048 10326     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.953107 1.001286</code></pre>
-<p>The models seem to have converged ok, based on <code>Rhat</code> values of 1. Some parameters sampled better than others, as can be seen by the varying <code>n_eff</code> values. I used 5 chains of 2000 post-warmup samples for each chain, so the actual samples are . If <code>n_eff</code> is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it’s possible to get more effective samples than actual samples.)</p>
+<pre><code>## [1] 2.9726180 0.9828763</code></pre>
+<p>The models seem to have converged ok, based on <code>Rhat</code> values of 1. Some parameters sampled better than others, as can be seen by the varying <code>n_eff</code> values. I used 5 chains of 2000 post-warmup samples for each chain, so the actual samples are 10000. If <code>n_eff</code> is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it’s possible to get more effective samples than actual samples.)</p>
 <p>We find that estimates for <span class="math inline">\(a_{0}\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(\sigma\)</span> are similar, <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> differ more.</p>
 <p>Again, note that the only thing we changed between models 1 and 3 are to make the priors for the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> parameters tighter. It didn’t seem to impact estimates for those parameters, but somehow it impacted the estimates for the posterior distributions of parameters <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. This is consistent with the figures above.</p>
 </div>
 <div id="comparing-model-estimates-with-the-truth" class="section level2">
 <h2>Comparing model estimates with the truth</h2>
-<p>Before we move on, let’s reflect on the truth, i.e. the actual values of the parameters, which we know here since we created/simulated the data. To generate the data, we used these parameter values. <span class="math inline">\(\sigma =\)</span> 1, <span class="math inline">\(\mu_a =\)</span> 3, <span class="math inline">\(\mu_b =\)</span> 1, <span class="math inline">\(a_1 =\)</span> 0.2, <span class="math inline">\(b_1 =\)</span> -0.2. We also said that our main scientific question is if there is a dose effect, i.e. non-zero <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>.</p>
-<p>The models find estimates of <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> that are close to what we used. The models also estimate <span class="math inline">\(a_1\)</span> centered around a positive value and <span class="math inline">\(b_1\)</span> on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models, we aren’t able to convincingly recover the parameters used to generate the data.</p>
+<p>Before we move on, let’s reflect on the truth, i.e. the actual values of the parameters, which we know here since we created/simulated the data. To generate the data, we used these parameter values. <span class="math inline">\(\sigma =\)</span> 1, <span class="math inline">\(\mu_a =\)</span> 3, <span class="math inline">\(\mu_b =\)</span> 1, <span class="math inline">\(a_1 =\)</span> 0.1, <span class="math inline">\(b_1 =\)</span> -0.1. We also said that our main scientific question is if there is a dose effect, i.e. non-zero <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>.</p>
+<p>The models find estimates of <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> that are close to what we used. The models also estimate <span class="math inline">\(a_1\)</span> centered around a positive value and <span class="math inline">\(b_1\)</span> on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models, we aren’t able to convincingly recover the parameters used to generate the data. I’m not sure if increasing the sampling would help, but it’s already taking quite long to run, especially for model 1, so I don’t really want to wait much longer. As we’ll see below, alternative models do better.</p>
 </div>
 <div id="models-2-and-2a" class="section level2">
 <h2>Models 2 and 2a</h2>
@@ -456,33 +456,33 @@ b0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[2]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##         mean     sd   5.5%  94.5% n_eff Rhat4
-## mu_a   2.967 0.0182  2.943  3.000    45   1.1
-## mu_b   1.010 0.0164  0.984  1.037    29   1.2
-## a1     0.034 0.0108  0.017  0.050   195   1.0
-## b1    -0.052 0.0094 -0.067 -0.038   198   1.0
-## sigma  7.006 0.2936  6.571  7.464   202   1.0</code></pre>
+## mu_a   2.969 0.0199  2.935  3.000   5.2   1.5
+## mu_b   0.985 0.0170  0.958  1.014   6.0   1.5
+## a1     0.103 0.0096  0.089  0.118  40.0   1.1
+## b1    -0.093 0.0094 -0.110 -0.079  39.7   1.1
+## sigma  6.901 0.2978  6.450  7.400  70.0   1.0</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.966899 1.009723</code></pre>
+<pre><code>## [1] 2.9692270 0.9849032</code></pre>
 <pre class="r"><code>#model 2a
 print(precis(fl[[5]]$fit,depth=1),digits = 2)</code></pre>
-<pre><code>##         mean    sd   5.5%  94.5% n_eff Rhat4
-## a0     2.903 0.024  2.864  2.941  4304     1
-## b0     0.956 0.021  0.923  0.989  4316     1
-## a1     0.040 0.012  0.021  0.060  4492     1
-## b1    -0.052 0.011 -0.068 -0.035  4528     1
-## sigma  7.141 0.319  6.654  7.671  5124     1</code></pre>
+<pre><code>##         mean     sd   5.5%  94.5% n_eff Rhat4
+## a0     2.914 0.0240  2.875  2.951  3757     1
+## b0     0.938 0.0205  0.904  0.970  4079     1
+## a1     0.113 0.0109  0.096  0.130  4130     1
+## b1    -0.094 0.0094 -0.109 -0.079  4206     1
+## sigma  7.036 0.3223  6.545  7.579  5125     1</code></pre>
 <p>The first thing to note is that model 2 performs awfully, with <code>Rhat</code> values &gt;1 and very low effective sample size <code>n_eff</code>. This indicates that this model doesn’t work well for the data and we should also take the estimated values not too seriously. However, pretending for a while that we can take them seriously, here is what we find.</p>
 <p>First, both models produce similar estimates. Since model 2a is simpler and doesn’t have that strange feature of us enforcing a very tight distribution for the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> parameters, it actually samples much better, see the higher <code>n_eff</code> numbers.</p>
 <p>Both models do a very poor job estimating <span class="math inline">\(\sigma\)</span>. That’s because we don’t allow the models to have the flexibility needed to fit the data, so it has to account for any variation between its estimated mean trajectory and the real data by making <span class="math inline">\(\sigma\)</span> large.</p>
-<p>Since the models are more constrained compared to models 1 and 3, they produce estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> that are tighter, though not close to the true values either. However, overall these models are not as good. We can for instance look at this using the <code>compare</code> function:</p>
+<p>Since the models are more constrained compared to models 1 and 3, they produce estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> that are tighter. However, overall these models are not good. We can for instance look at this using the <code>compare</code> function:</p>
 <pre class="r"><code>compare(fl[[1]]$fit,fl[[3]]$fit,fl[[2]]$fit,fl[[5]]$fit)</code></pre>
-<pre><code>##                  WAIC       SE        dWAIC        dSE     pWAIC        weight
-## fl[[1]]$fit  786.1429 23.07789    0.0000000         NA 43.908951  5.877574e-01
-## fl[[3]]$fit  786.8523 23.06466    0.7094049  0.4313888 44.184956  4.122426e-01
-## fl[[2]]$fit 1787.9340 41.36716 1001.7911313 47.0942541  9.397472 1.710086e-218
-## fl[[5]]$fit 1798.0008 41.73071 1011.8579104 47.2983138  9.755211 1.114409e-220</code></pre>
+<pre><code>##                  WAIC       SE        dWAIC        dSE    pWAIC        weight
+## fl[[3]]$fit  786.8312 23.14590    0.0000000         NA 44.27149  5.320471e-01
+## fl[[1]]$fit  787.0879 23.07550    0.2567285  0.4294088 44.25671  4.679529e-01
+## fl[[2]]$fit 1781.4503 45.27575  994.6190928 51.2385786 10.99948 5.586737e-217
+## fl[[5]]$fit 1790.5547 45.25853 1003.7235340 51.1045017 10.60768 5.890525e-219</code></pre>
 <p>I’m not going to discuss things in detail (see <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking</a>), but a lower WAIC means a model that fits best in the sense that it strikes a good balance between fitting the data while not overfitting. As you can see, models 1 and 3 perform very similarly and models 2 and 2a are much worse.</p>
-<p>The larger WAIC indicates either strong overfitting or underfitting. In this case, it’s underfitting. The models are not flexible enough to capture the individual-level variation. If we did indeed not want to account for individual-level variation, we should go with a model that simply doesn’t include it, i.e. model 2a. The contrived model 2 with very narrow priors is just a bad model, and I’m really only exploring it here for demonstration purposes.</p>
+<p>The larger WAIC indicates either strong overfitting or underfitting. In this case, it’s underfitting. The models are not flexible enough to capture the individual-level variation. You’ll see that clearly in the plots shown further below. If we did indeed not want to account for individual-level variation, we should go with a model that simply doesn’t include it, i.e. model 2a. The contrived model 2 with very narrow priors is just a bad model, and I’m really only exploring it here for demonstration purposes.</p>
 </div>
 <div id="models-4-and-4a" class="section level2">
 <h2>Models 4 and 4a</h2>
@@ -534,40 +534,72 @@ pairs(fl[[4]]$fit, pars = c(&quot;a0[16]&quot;,&quot;a0[17]&quot;,&quot;a0[18]&q
 <pre class="r"><code># mean of a0 prior
 pairs(fl[[4]]$fit, pars = c(&quot;mu_a&quot;,&quot;mu_b&quot;,&quot;a1&quot;,&quot;b1&quot;))</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_4_4a_pair_plots-4.png" width="672" /></p>
-<p>We still see the same issue with correlations among the parameters for dose levels where <span class="math inline">\(a_1\)</span> is acting, though the correlations are not as extreme. They are also minor between the overall estimates for the mean of the <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> parameters and <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. I interpret to mean that the adaptive sampling helped somewhat with the identifiability problem, though it seems not fully.</p>
+<p>We still see the same issue with correlations among the parameters for dose levels where <span class="math inline">\(a_1\)</span> is acting, though the correlations are not as extreme. They are also minor between the overall estimates for the mean of the <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> parameters and <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. I interpret this to mean that the adaptive sampling helped somewhat with the identifiability problem, though it seems to not fully resolve it.</p>
 <p>We can also again look at the numerical outputs from the <code>precis</code> function.</p>
 <pre class="r"><code># model 4
 print(precis(fl[[4]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##           mean    sd   5.5%  94.5% n_eff Rhat4
-## mu_a     2.964 0.019  2.935  2.994  9186     1
-## mu_b     1.006 0.024  0.969  1.043 10091     1
-## sigma_a  0.089 0.015  0.068  0.116  7408     1
-## sigma_b  0.115 0.019  0.089  0.149  7149     1
-## a1       0.038 0.010  0.022  0.054  1442     1
-## b1      -0.049 0.013 -0.070 -0.030  1354     1
-## sigma    0.972 0.047  0.900  1.051  8389     1</code></pre>
+## mu_a     2.983 0.019  2.953  3.014  9187     1
+## mu_b     0.988 0.024  0.949  1.025  8891     1
+## sigma_a  0.092 0.015  0.071  0.119  8163     1
+## sigma_b  0.112 0.018  0.087  0.143  7578     1
+## a1       0.090 0.010  0.073  0.106  1227     1
+## b1      -0.101 0.012 -0.121 -0.081  1280     1
+## sigma    0.973 0.047  0.900  1.052  9095     1</code></pre>
 <pre class="r"><code># model 4a
 print(precis(fl[[6]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##           mean    sd   5.5%  94.5% n_eff Rhat4
-## mu_a     2.965 0.018  2.936  2.995  2107     1
-## mu_b     1.006 0.024  0.967  1.045  2011     1
-## sigma_a  0.089 0.015  0.068  0.116  1973     1
-## sigma_b  0.115 0.020  0.089  0.149  2371     1
-## a1       0.038 0.010  0.022  0.054  2723     1
-## b1      -0.049 0.013 -0.068 -0.029  2391     1
-## sigma    0.972 0.047  0.901  1.050  5711     1</code></pre>
+## mu_a     2.983 0.020  2.952  3.014  2525     1
+## mu_b     0.987 0.024  0.951  1.024  2364     1
+## sigma_a  0.092 0.016  0.071  0.120  2524     1
+## sigma_b  0.112 0.019  0.086  0.145  2794     1
+## a1       0.091 0.010  0.074  0.107  2954     1
+## b1      -0.101 0.012 -0.120 -0.081  2501     1
+## sigma    0.973 0.047  0.900  1.051  6382     1</code></pre>
 <p>The numerics confirm that the two models lead to essentially the same results. The values for <code>n_eff</code> differ between models, though neither model is consistently larger. This suggests that each model formulation had advantages in sampling for some of the parameters.</p>
-<p>If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> are estimated fairly well. Estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are still off, but the credible intervals are less wide, such that those estimates are now reliably positive/negative.</p>
+<p>If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> are estimated fairly well. Estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are now also pretty good, and the credible intervals are less wide, such that those estimates are now reliably positive/negative.</p>
 <p>Now let’s briefly run the <code>compare</code> function too and include model 3 as well:</p>
 <pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit)</code></pre>
-<pre><code>##                 WAIC       SE      dWAIC       dSE    pWAIC    weight
-## fl[[6]]$fit 785.9028 23.24886 0.00000000        NA 43.60260 0.3831769
-## fl[[4]]$fit 785.9275 23.20363 0.02473099 0.3347607 43.47880 0.3784679
-## fl[[3]]$fit 786.8523 23.06466 0.94947022 2.2430371 44.18496 0.2383551</code></pre>
+<pre><code>##                 WAIC       SE     dWAIC       dSE    pWAIC    weight
+## fl[[4]]$fit 785.7564 23.21761 0.0000000        NA 43.40855 0.4346582
+## fl[[6]]$fit 786.4235 23.28410 0.6670811 0.3800124 43.75155 0.3113817
+## fl[[3]]$fit 786.8312 23.14590 1.0747658 2.2075132 44.27149 0.2539601</code></pre>
 <p>We do find that model 4/4a performs a bit better. Note that model 4 has more actual parameters, but the effective parameters (which is described by <code>pWAIC</code>) is smaller. Models 4 and 4a also run much faster during fitting.</p>
-<p>Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely. We still don’t yet retrieve the values we used to simulate the data. At this point, it’s not clear to me if with more sampling we could get there, or if our fairly low <span class="math inline">\(N\)</span> value doesn’t allow better estimation (that doesn’t seem to be the case, see my explorations of simulated data with larger <span class="math inline">\(N\)</span> in <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/">part 4</a>). I am a bit stumped by the fact that not even the credible intervals for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> contain the true values for these parameters. My current best guess is that there are still some parameter identifiability and overfitting issues. There might be too many parameters to estimate, and the fact that we gave each individual their own <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> values allows those parameters to “absorb” some of the dose-dependent signal in <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. But I’m not fully sure that explanation is right. I need to dig into that a bit more. And if this is true, the question is how should one formulate a model that overcomes the problem? (Feedback appreciated).</p>
+<p>Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely and efficiently.</p>
+<p>Based on the pair plots, there might still be some parameter identifiability and overfitting issues. There might be too many parameters to estimate, and the fact that we gave each individual their own <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> values allows those parameters to “absorb” some of the dose-dependent signal in <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. But overall, model 4/4a seem to perform rather well.</p>
+</div>
+<div id="model-5-1" class="section level2">
+<h2>Model 5</h2>
+<p>As stated above, due to a typo in my code, the above models, including 4/4a, initially produced estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> that were not close to those used to generate the data. Because if the pair plots, I suspected non-identifiability issues and wanted to explore what would happen if I removed those parameters.</p>
+<p>If we now look at the pairs plots, maybe not surprisingly, the correlations between individual <span class="math inline">\(a_0\)</span> parameters are gone.</p>
+<pre class="r"><code># a few parameters for each dose
+#low dose
+pairs(fl[[7]]$fit, pars = c(&quot;a0[1]&quot;,&quot;a0[2]&quot;,&quot;a0[3]&quot;,&quot;a0[4]&quot;,&quot;a0[5]&quot;))</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_5_pair_plots-1.png" width="672" /></p>
+<pre class="r"><code>#medium dose
+pairs(fl[[7]]$fit, pars = c(&quot;a0[8]&quot;,&quot;a0[9]&quot;,&quot;a0[10]&quot;,&quot;a0[11]&quot;,&quot;a0[12]&quot;))</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_5_pair_plots-2.png" width="672" /></p>
+<pre class="r"><code>#high dose
+pairs(fl[[7]]$fit, pars = c(&quot;a0[16]&quot;,&quot;a0[17]&quot;,&quot;a0[18]&quot;,&quot;a0[19]&quot;,&quot;a0[20]&quot;))</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_5_pair_plots-3.png" width="672" /></p>
+<p>The model estimates the parameters reasonably well</p>
+<pre class="r"><code>a0mean = mean(precis(fl[[7]]$fit,depth=2,&quot;a0&quot;)$mean)
+b0mean = mean(precis(fl[[7]]$fit,depth=2,&quot;b0&quot;)$mean)
+print(precis(fl[[7]]$fit,depth=1),digits = 2)</code></pre>
+<pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
+<pre><code>##       mean    sd 5.5% 94.5% n_eff Rhat4
+## sigma 0.97 0.047  0.9   1.1 11823     1</code></pre>
+<pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
+<pre><code>## [1] 3.0005793 0.9679903</code></pre>
+<p>It doesn’t seem quite as good as the previous models.</p>
+<pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[7]]$fit)</code></pre>
+<pre><code>##                 WAIC       SE    dWAIC      dSE    pWAIC    weight
+## fl[[4]]$fit 785.7564 23.21761 0.000000       NA 43.40855 0.4772231
+## fl[[3]]$fit 786.8312 23.14590 1.074766 2.207513 44.27149 0.2788297
+## fl[[7]]$fit 787.0985 23.13355 1.342064 2.102841 44.32963 0.2439473</code></pre>
+<p>And of course the main problem with this model: It can’t answer any question about the role of dose, since we removed that component from the model!</p>
 </div>
 </div>
 <div id="computing-predictions" class="section level1">
@@ -576,7 +608,7 @@ print(precis(fl[[6]]$fit,depth=1),digits = 2)</code></pre>
 <p>That is all to say, it’s important to look at model predicted outcomes, not just the parameters. So let’s plot the predictions implied by the fits for the models. The general strategy for that is to use the parameter estimates in the posterior, put them in the model, and compute the predictions. The <code>rethinking</code> package has some helper functions for that (<code>sim</code> and <code>link</code>).</p>
 <p>The code below produces predictions, both for the deterministic mean trajectory <span class="math inline">\(\mu\)</span>, and the actual outcome, <span class="math inline">\(Y\)</span>, which has added variation due to <span class="math inline">\(\sigma\)</span>.</p>
 <pre class="r"><code>#small data adjustment for plotting
-plotdat &lt;- fitdat %&gt;% data.frame()  %&gt;% 
+plotdat &lt;- fitdat %&gt;% data.frame()  %&gt;%
                       mutate(id = as.factor(id))  %&gt;%
                       mutate(dose = dose_cat)
 
@@ -710,7 +742,14 @@ I’m plotting them in the order I discussed the models above, so the ones we co
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_4_4a_plots-1.png" width="672" /></p>
 <pre class="r"><code>plot(plotlist[[6]])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_4_4a_plots-2.png" width="672" /></p>
-<p>So overall, the figures make sense and indicates that apart from models 2/2a, the other models are performing well. I consider model 4/4a the most suitable one. It seems that if we want to do prediction, our models are fine. But if we wanted to estimate the model parameters, specifically <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>, the models can’t quite deliver. For another example and more discussion in that, see e.g. Section 6.1. in <em>Statistical Rethinking</em>, as well as 9.5.4 (all referring to the 2nd edition of the book).</p>
+</div>
+<div id="model-5-2" class="section level2">
+<h2>Model 5</h2>
+<p>The model fits look fine, suggesting that one parameter for each individual is enough to capture the data. That’s not surprising. However, this of course does not allow us to ask and answer any scientific questions about the role of dose.</p>
+<pre class="r"><code>plot(plotlist[[7]])</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_5_plots-1.png" width="672" /></p>
+<p>So overall, the figures make sense It seems that if we want to do prediction, all models that include individual variability are fine, models 2/2a are not great. If we wanted to estimate the model parameters, specifically <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>, models 1 and 3 and of course 5 don’t work. In that case, model 2/2a works ok. I consider model 4/4a the best one overall.</p>
+<p>For another example and more discussion of estimation versus prediction, see e.g. Section 6.1. in <em>Statistical Rethinking</em>, as well as 9.5.4 (all referring to the 2nd edition of the book).</p>
 </div>
 </div>
 <div id="summary-and-continuation" class="section level1">

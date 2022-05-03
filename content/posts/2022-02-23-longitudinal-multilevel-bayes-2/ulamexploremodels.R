@@ -184,9 +184,33 @@ compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit)
 
 
 
+
+## ---- mod_5_pair_plots --------
+# a few parameters for each dose
+#low dose
+pairs(fl[[7]]$fit, pars = c("a0[1]","a0[2]","a0[3]","a0[4]","a0[5]"))
+#medium dose
+pairs(fl[[7]]$fit, pars = c("a0[8]","a0[9]","a0[10]","a0[11]","a0[12]"))
+#high dose
+pairs(fl[[7]]$fit, pars = c("a0[16]","a0[17]","a0[18]","a0[19]","a0[20]"))
+
+
+## ---- mod_5_exploration --------
+a0mean = mean(precis(fl[[7]]$fit,depth=2,"a0")$mean)
+b0mean = mean(precis(fl[[7]]$fit,depth=2,"b0")$mean)
+print(precis(fl[[7]]$fit,depth=1),digits = 2)
+print(c(a0mean,b0mean))
+
+
+## ---- mod_5_comparison --------
+compare(fl[[3]]$fit,fl[[4]]$fit,fl[[7]]$fit)
+
+
+
+
 ## ---- computepredictions --------
 #small data adjustment for plotting
-plotdat <- fitdat %>% data.frame()  %>% 
+plotdat <- fitdat %>% data.frame()  %>%
                       mutate(id = as.factor(id))  %>%
                       mutate(dose = dose_cat)
 
@@ -305,6 +329,10 @@ plot(plotlist[[5]])
 ## ---- mod_4_4a_plots --------
 plot(plotlist[[4]])
 plot(plotlist[[6]])
+
+
+## ---- mod_5_plots --------
+plot(plotlist[[7]])
 
 
 ## ---- additional-code -------

@@ -3,7 +3,7 @@ title: Bayesian analysis of longitudinal multilevel data using brms and rethinki
 summary: Part 1 of a tutorial showing how to specify models and simulate data for a longitudinal multilevel setup.
 author: Andreas Handel
 date: '2022-02-22'
-lastMod: "2022-02-22"
+lastMod: "2022-05-02"
 slug: longitudinal-multilevel-bayesian-analysis-1
 categories: 
 - R
