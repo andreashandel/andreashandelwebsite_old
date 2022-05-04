@@ -109,9 +109,9 @@ fl = vector(mode = "list", length = length(modellist))
 ## ---- fittingsetup --------
 #general settings for fitting
 #you might want to adjust based on your computer
-warmup = 2000
+warmup = 4000
 iter = warmup + floor(warmup/2)
-max_td = 12 #tree depth
+max_td = 15 #tree depth
 adapt_delta = 0.999
 chains = 5
 cores  = chains
@@ -176,6 +176,9 @@ for (n in 1:length(modellist))
 # saving the results so we can use them later
 filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","brmsfits", ext="Rds")
 saveRDS(fl,filepath)
+
+## ---- additional-code -------
+for (n in 1:length(fl)) {print(fl[[n]]$runtime)}
 
 
 

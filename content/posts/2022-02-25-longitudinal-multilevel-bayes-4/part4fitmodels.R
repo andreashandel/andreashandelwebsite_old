@@ -342,3 +342,5 @@ cat('************** \n')
 # saving the results so we can use them later
 filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_cat", ext="Rds")
 saveRDS(fl,filepath)
+
+

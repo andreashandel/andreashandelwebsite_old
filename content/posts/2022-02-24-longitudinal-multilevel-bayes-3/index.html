@@ -149,9 +149,9 @@ fl = vector(mode = &quot;list&quot;, length = length(modellist))</code></pre>
 <p>We define some general values for the fitting. Since the starting values depend on number of chains, we need to do this setup first.</p>
 <pre class="r"><code>#general settings for fitting
 #you might want to adjust based on your computer
-warmup = 2000
+warmup = 4000
 iter = warmup + floor(warmup/2)
-max_td = 12 #tree depth
+max_td = 15 #tree depth
 adapt_delta = 0.999
 chains = 5
 cores  = chains
@@ -245,18 +245,18 @@ print(otherpars)</code></pre>
 <pre><code>## # A tibble: 5 x 10
 ##   variable           mean   median     sd    mad       q5     q95  rhat ess_bulk
 ##   &lt;chr&gt;             &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
-## 1 b_alpha_dose_~  2.13e-1  1.96e-1 0.734  0.726    -1.03     1.49  1.05     102.
-## 2 b_beta_dose_a~ -2.19e-2 -1.03e-2 0.748  0.768    -1.33     1.15  1.04     108.
-## 3 sigma           9.74e-1  9.72e-1 0.0463 0.0457    0.900    1.05  1.01    1831.
-## 4 lprior         -1.59e+2 -1.58e+2 0.992  0.768  -161.    -158.    1.01     215.
-## 5 lp__           -5.26e+2 -5.25e+2 5.45   5.36   -535.    -517.    1.00    2145.
+## 1 b_alpha_dose_~    0.225    0.221 0.728  0.721    -0.959    1.41  1.00     556.
+## 2 b_beta_dose_a~   -0.210   -0.211 0.726  0.735    -1.39     1.00  1.00     652.
+## 3 sigma             0.972    0.970 0.0465 0.0462    0.899    1.05  1.00    8764.
+## 4 lprior         -159.    -158.    0.974  0.696  -161.    -158.    1.00    1328.
+## 5 lp__           -526.    -525.    5.61   5.55   -535.    -517.    1.00    3011.
 ## # ... with 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
 <pre><code>## $mean
-## [1] 2.930814
+## [1] 2.957433
 ## 
 ## $mean
-## [1] 1.000877</code></pre>
+## [1] 1.008285</code></pre>
 <pre class="r"><code># repeat for model 3
 draws &lt;- posterior::as_draws_array(fl[[3]]$fit)
 pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
@@ -267,18 +267,18 @@ print(otherpars)</code></pre>
 <pre><code>## # A tibble: 5 x 10
 ##   variable          mean   median     sd    mad       q5      q95  rhat ess_bulk
 ##   &lt;chr&gt;            &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
-## 1 b_alpha_dose~  9.27e-2  9.21e-2 0.109  0.110  -8.77e-2    0.270  1.00    2152.
-## 2 b_beta_dose_~ -2.57e-2 -2.46e-2 0.109  0.108  -2.08e-1    0.155  1.00    1920.
-## 3 sigma          9.73e-1  9.72e-1 0.0468 0.0466  8.99e-1    1.05   1.00    8874.
-## 4 lprior        -6.24e+1 -6.21e+1 1.02   0.730  -6.45e+1  -61.4    1.00    2620.
-## 5 lp__          -4.30e+2 -4.29e+2 5.67   5.58   -4.40e+2 -421.     1.00    3001.
+## 1 b_alpha_dose~  1.47e-1  1.47e-1 0.106  0.107  -3.05e-2    0.316  1.00    1782.
+## 2 b_beta_dose_~ -7.54e-2 -7.54e-2 0.109  0.112  -2.53e-1    0.102  1.00    1851.
+## 3 sigma          9.72e-1  9.70e-1 0.0477 0.0483  8.99e-1    1.05   1.00   10543.
+## 4 lprior        -6.26e+1 -6.23e+1 0.967  0.730  -6.45e+1  -61.6    1.00    2425.
+## 5 lp__          -4.30e+2 -4.29e+2 5.64   5.59   -4.39e+2 -421.     1.00    2992.
 ## # ... with 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
 <pre><code>## $mean
-## [1] 2.953666
+## [1] 2.972122
 ## 
 ## $mean
-## [1] 1.001361</code></pre>
+## [1] 0.9821593</code></pre>
 <p>Note the different naming of the parameters in <code>brms</code>. It’s unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have <code>dose</code> in their names are the ones we called <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> in our models. You can ignore the other entries.</p>
 <p>Some of the R-hat values for model 1 are not at 1, and the ESS (the effective sample size) is small. Model 1 also took long to run. That all indicates that the priors for model 3 are better.</p>
 <p>We can also compare the models as we did for <code>rethinking</code> using these lines of code:</p>
@@ -286,17 +286,16 @@ print(otherpars)</code></pre>
             add_criterion(fl[[3]]$fit,&quot;waic&quot;),
             criterion = &quot;waic&quot;)</code></pre>
 <pre><code>## Warning: 
-## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.
-
-## Warning: 
-## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+## 34 (12.9%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre><code>## Warning: 
+## 35 (13.3%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
 <pre class="r"><code>print(comp, simplify = FALSE)</code></pre>
 <pre><code>##                                    elpd_diff se_diff elpd_waic se_elpd_waic
-## add_criterion(fl[[1]]$fit, &quot;waic&quot;)    0.0       0.0  -393.5      11.5      
-## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   -0.4       0.2  -393.9      11.5      
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)    0.0       0.0  -393.2      11.5      
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   -0.6       0.3  -393.9      11.6      
 ##                                    p_waic se_p_waic waic   se_waic
-## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   44.2    4.1     787.0   23.1 
-## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   44.5    4.1     787.8   23.1</code></pre>
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   44.0    4.0     786.5   23.1 
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   44.7    4.2     787.8   23.2</code></pre>
 <p>We find that as for the <code>ulam</code> fits, the estimates for <span class="math inline">\(a_0\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(\sigma\)</span> are similar, but that’s not the case for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. The <span class="math inline">\(b_1\)</span> estimates are similar to those for <code>ulam</code> model 3, and not close to the true value. I’m not really sure what to make of that.</p>
 </div>
 <div id="comparison-with-the-truth-and-ulam" class="section level2">
@@ -313,13 +312,13 @@ print(pars)</code></pre>
 <pre><code>## # A tibble: 7 x 10
 ##   variable        mean   median      sd     mad       q5      q95  rhat ess_bulk
 ##   &lt;chr&gt;          &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
-## 1 b_alpha_In~  2.97e+0  2.97e+0 0.0208  0.0209   2.93e+0  3.00e+0  1.00    4569.
-## 2 b_alpha_do~  3.41e-2  3.40e-2 0.0108  0.0106   1.63e-2  5.21e-2  1.00    4656.
-## 3 b_beta_Int~  1.01e+0  1.01e+0 0.0184  0.0184   9.80e-1  1.04e+0  1.00    4580.
-## 4 b_beta_dos~ -5.20e-2 -5.21e-2 0.00965 0.00952 -6.78e-2 -3.59e-2  1.00    4405.
-## 5 sigma        7.02e+0  7.01e+0 0.315   0.315    6.52e+0  7.55e+0  1.00    5689.
-## 6 lprior      -9.65e+0 -9.64e+0 0.0877  0.0880  -9.79e+0 -9.50e+0  1.00    5693.
-## 7 lp__        -8.97e+2 -8.97e+2 1.58    1.44    -9.00e+2 -8.95e+2  1.00    3304.
+## 1 b_alpha_In~  2.98e+0  2.98e+0 0.0215  0.0215   2.94e+0  3.01e+0  1.00    3978.
+## 2 b_alpha_do~  1.01e-1  1.01e-1 0.00989 0.00998  8.52e-2  1.17e-1  1.00    4511.
+## 3 b_beta_Int~  9.92e-1  9.92e-1 0.0190  0.0191   9.61e-1  1.02e+0  1.00    4161.
+## 4 b_beta_dos~ -9.29e-2 -9.29e-2 0.00877 0.00877 -1.07e-1 -7.85e-2  1.00    4657.
+## 5 sigma        6.90e+0  6.89e+0 0.302   0.294    6.43e+0  7.41e+0  1.00    6006.
+## 6 lprior      -9.59e+0 -9.59e+0 0.0855  0.0844  -9.73e+0 -9.45e+0  1.00    6033.
+## 7 lp__        -8.93e+2 -8.92e+2 1.58    1.37    -8.96e+2 -8.91e+2  1.00    2970.
 ## # ... with 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
 <p>The parameters that have <code>_Intercept</code> in their name are what we called <span class="math inline">\(\mu_a\)</span> and <span class="math inline">\(\mu_b\)</span>, the onse containing <code>_dose</code> are our <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. We find pretty much the same results we found using <code>ulam</code>.</p>
 </div>
@@ -329,18 +328,18 @@ print(pars)</code></pre>
 pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
 print(pars)</code></pre>
 <pre><code>## # A tibble: 105 x 10
-##    variable          mean  median      sd     mad      q5     q95  rhat ess_bulk
-##    &lt;chr&gt;            &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
-##  1 b_alpha_Inter~  2.96    2.96   0.0192  0.0190   2.93    3.00    1.00    2286.
-##  2 b_alpha_dose_~  0.0378  0.0380 0.00968 0.00939  0.0218  0.0534  1.00    2812.
-##  3 b_beta_Interc~  1.01    1.01   0.0240  0.0236   0.968   1.05    1.00    2391.
-##  4 b_beta_dose_a~ -0.0488 -0.0488 0.0127  0.0123  -0.0700 -0.0278  1.00    2513.
-##  5 sd_id__alpha_~  0.0882  0.0865 0.0145  0.0138   0.0678  0.115   1.00    2543.
-##  6 sd_id__beta_I~  0.115   0.113  0.0190  0.0175   0.0880  0.150   1.00    2414.
-##  7 sigma           0.972   0.971  0.0472  0.0463   0.898   1.05    1.00    6807.
-##  8 r_id__alpha[1~  0.192   0.192  0.0333  0.0323   0.137   0.247   1.00    3027.
-##  9 r_id__alpha[2~  0.121   0.121  0.0335  0.0327   0.0667  0.176   1.00    3215.
-## 10 r_id__alpha[3~ -0.0396 -0.0393 0.0341  0.0332  -0.0960  0.0157  1.00    3246.
+##    variable            mean  median     sd    mad      q5     q95  rhat ess_bulk
+##    &lt;chr&gt;              &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+##  1 b_alpha_Interce~  2.98    2.98   0.0192 0.0188  2.95    3.01    1.00    2673.
+##  2 b_alpha_dose_adj  0.0909  0.0909 0.0106 0.0103  0.0733  0.108   1.00    2629.
+##  3 b_beta_Intercept  0.988   0.988  0.0237 0.0232  0.949   1.03    1.00    2012.
+##  4 b_beta_dose_adj  -0.101  -0.101  0.0122 0.0120 -0.121  -0.0811  1.00    2594.
+##  5 sd_id__alpha_In~  0.0921  0.0901 0.0149 0.0137  0.0710  0.120   1.00    2677.
+##  6 sd_id__beta_Int~  0.111   0.109  0.0184 0.0174  0.0852  0.144   1.00    2784.
+##  7 sigma             0.972   0.970  0.0466 0.0463  0.899   1.05    1.00    5947.
+##  8 r_id__alpha[1,I~  0.203   0.203  0.0349 0.0342  0.146   0.260   1.00    3240.
+##  9 r_id__alpha[2,I~  0.132   0.132  0.0354 0.0342  0.0740  0.189   1.00    3213.
+## 10 r_id__alpha[3,I~ -0.0273 -0.0270 0.0363 0.0352 -0.0861  0.0319  1.00    3370.
 ## # ... with 95 more rows, and 1 more variable: ess_tail &lt;dbl&gt;</code></pre>
 </div>
 <div id="comparing-all-models" class="section level2">
@@ -352,25 +351,24 @@ print(pars)</code></pre>
                     add_criterion(fl[[4]]$fit,&quot;waic&quot;),
                     criterion = &quot;waic&quot;)</code></pre>
 <pre><code>## Warning: 
-## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.
-
-## Warning: 
-## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+## 34 (12.9%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre><code>## Warning: 
+## 35 (13.3%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
 <pre><code>## Warning: 
 ## 4 (1.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
 <pre><code>## Warning: 
-## 33 (12.5%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+## 34 (12.9%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
 <pre class="r"><code>print(comp, simplify = FALSE)</code></pre>
 <pre><code>##                                    elpd_diff se_diff elpd_waic se_elpd_waic
-## add_criterion(fl[[4]]$fit, &quot;waic&quot;)    0.0       0.0  -393.4      11.7      
-## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   -0.1       1.1  -393.5      11.5      
-## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   -0.5       1.1  -393.9      11.5      
-## add_criterion(fl[[2]]$fit, &quot;waic&quot;) -501.0      23.6  -894.4      20.8      
+## add_criterion(fl[[4]]$fit, &quot;waic&quot;)    0.0       0.0  -393.2      11.7      
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   -0.1       1.1  -393.2      11.5      
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   -0.7       1.1  -393.9      11.6      
+## add_criterion(fl[[2]]$fit, &quot;waic&quot;) -497.1      25.4  -890.3      22.4      
 ##                                    p_waic se_p_waic waic   se_waic
-## add_criterion(fl[[4]]$fit, &quot;waic&quot;)   44.0    4.1     786.7   23.3 
-## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   44.2    4.1     787.0   23.1 
-## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   44.5    4.1     787.8   23.1 
-## add_criterion(fl[[2]]$fit, &quot;waic&quot;)    9.8    2.8    1788.7   41.5</code></pre>
+## add_criterion(fl[[4]]$fit, &quot;waic&quot;)   43.8    4.1     786.4   23.4 
+## add_criterion(fl[[1]]$fit, &quot;waic&quot;)   44.0    4.0     786.5   23.1 
+## add_criterion(fl[[3]]$fit, &quot;waic&quot;)   44.7    4.2     787.8   23.2 
+## add_criterion(fl[[2]]$fit, &quot;waic&quot;)   10.4    3.2    1780.7   44.8</code></pre>
 </div>
 <div id="prior-exploration" class="section level2">
 <h2>Prior exploration</h2>
@@ -379,60 +377,60 @@ To make the output managable, we look at the simplest model, model 2. This looks
 <pre class="r"><code>preprior &lt;- get_prior(m1eqs,data=fitdat,family=gaussian())
 postprior &lt;- prior_summary(fl[[2]]$fit)
 print(preprior)</code></pre>
-<pre><code>##                prior class     coef group resp dpar nlpar lb ub       source
-##  student_t(3, 0, 22) sigma                                 0         default
-##               (flat)     b                          alpha            default
-##               (flat)     b dose_adj                 alpha       (vectorized)
-##               (flat)     b      id1                 alpha       (vectorized)
-##               (flat)     b     id10                 alpha       (vectorized)
-##               (flat)     b     id11                 alpha       (vectorized)
-##               (flat)     b     id12                 alpha       (vectorized)
-##               (flat)     b     id13                 alpha       (vectorized)
-##               (flat)     b     id14                 alpha       (vectorized)
-##               (flat)     b     id15                 alpha       (vectorized)
-##               (flat)     b     id16                 alpha       (vectorized)
-##               (flat)     b     id17                 alpha       (vectorized)
-##               (flat)     b     id18                 alpha       (vectorized)
-##               (flat)     b     id19                 alpha       (vectorized)
-##               (flat)     b      id2                 alpha       (vectorized)
-##               (flat)     b     id20                 alpha       (vectorized)
-##               (flat)     b     id21                 alpha       (vectorized)
-##               (flat)     b     id22                 alpha       (vectorized)
-##               (flat)     b     id23                 alpha       (vectorized)
-##               (flat)     b     id24                 alpha       (vectorized)
-##               (flat)     b      id3                 alpha       (vectorized)
-##               (flat)     b      id4                 alpha       (vectorized)
-##               (flat)     b      id5                 alpha       (vectorized)
-##               (flat)     b      id6                 alpha       (vectorized)
-##               (flat)     b      id7                 alpha       (vectorized)
-##               (flat)     b      id8                 alpha       (vectorized)
-##               (flat)     b      id9                 alpha       (vectorized)
-##               (flat)     b                           beta            default
-##               (flat)     b dose_adj                  beta       (vectorized)
-##               (flat)     b      id1                  beta       (vectorized)
-##               (flat)     b     id10                  beta       (vectorized)
-##               (flat)     b     id11                  beta       (vectorized)
-##               (flat)     b     id12                  beta       (vectorized)
-##               (flat)     b     id13                  beta       (vectorized)
-##               (flat)     b     id14                  beta       (vectorized)
-##               (flat)     b     id15                  beta       (vectorized)
-##               (flat)     b     id16                  beta       (vectorized)
-##               (flat)     b     id17                  beta       (vectorized)
-##               (flat)     b     id18                  beta       (vectorized)
-##               (flat)     b     id19                  beta       (vectorized)
-##               (flat)     b      id2                  beta       (vectorized)
-##               (flat)     b     id20                  beta       (vectorized)
-##               (flat)     b     id21                  beta       (vectorized)
-##               (flat)     b     id22                  beta       (vectorized)
-##               (flat)     b     id23                  beta       (vectorized)
-##               (flat)     b     id24                  beta       (vectorized)
-##               (flat)     b      id3                  beta       (vectorized)
-##               (flat)     b      id4                  beta       (vectorized)
-##               (flat)     b      id5                  beta       (vectorized)
-##               (flat)     b      id6                  beta       (vectorized)
-##               (flat)     b      id7                  beta       (vectorized)
-##               (flat)     b      id8                  beta       (vectorized)
-##               (flat)     b      id9                  beta       (vectorized)</code></pre>
+<pre><code>##                  prior class     coef group resp dpar nlpar lb ub       source
+##  student_t(3, 0, 22.7) sigma                                 0         default
+##                 (flat)     b                          alpha            default
+##                 (flat)     b dose_adj                 alpha       (vectorized)
+##                 (flat)     b      id1                 alpha       (vectorized)
+##                 (flat)     b     id10                 alpha       (vectorized)
+##                 (flat)     b     id11                 alpha       (vectorized)
+##                 (flat)     b     id12                 alpha       (vectorized)
+##                 (flat)     b     id13                 alpha       (vectorized)
+##                 (flat)     b     id14                 alpha       (vectorized)
+##                 (flat)     b     id15                 alpha       (vectorized)
+##                 (flat)     b     id16                 alpha       (vectorized)
+##                 (flat)     b     id17                 alpha       (vectorized)
+##                 (flat)     b     id18                 alpha       (vectorized)
+##                 (flat)     b     id19                 alpha       (vectorized)
+##                 (flat)     b      id2                 alpha       (vectorized)
+##                 (flat)     b     id20                 alpha       (vectorized)
+##                 (flat)     b     id21                 alpha       (vectorized)
+##                 (flat)     b     id22                 alpha       (vectorized)
+##                 (flat)     b     id23                 alpha       (vectorized)
+##                 (flat)     b     id24                 alpha       (vectorized)
+##                 (flat)     b      id3                 alpha       (vectorized)
+##                 (flat)     b      id4                 alpha       (vectorized)
+##                 (flat)     b      id5                 alpha       (vectorized)
+##                 (flat)     b      id6                 alpha       (vectorized)
+##                 (flat)     b      id7                 alpha       (vectorized)
+##                 (flat)     b      id8                 alpha       (vectorized)
+##                 (flat)     b      id9                 alpha       (vectorized)
+##                 (flat)     b                           beta            default
+##                 (flat)     b dose_adj                  beta       (vectorized)
+##                 (flat)     b      id1                  beta       (vectorized)
+##                 (flat)     b     id10                  beta       (vectorized)
+##                 (flat)     b     id11                  beta       (vectorized)
+##                 (flat)     b     id12                  beta       (vectorized)
+##                 (flat)     b     id13                  beta       (vectorized)
+##                 (flat)     b     id14                  beta       (vectorized)
+##                 (flat)     b     id15                  beta       (vectorized)
+##                 (flat)     b     id16                  beta       (vectorized)
+##                 (flat)     b     id17                  beta       (vectorized)
+##                 (flat)     b     id18                  beta       (vectorized)
+##                 (flat)     b     id19                  beta       (vectorized)
+##                 (flat)     b      id2                  beta       (vectorized)
+##                 (flat)     b     id20                  beta       (vectorized)
+##                 (flat)     b     id21                  beta       (vectorized)
+##                 (flat)     b     id22                  beta       (vectorized)
+##                 (flat)     b     id23                  beta       (vectorized)
+##                 (flat)     b     id24                  beta       (vectorized)
+##                 (flat)     b      id3                  beta       (vectorized)
+##                 (flat)     b      id4                  beta       (vectorized)
+##                 (flat)     b      id5                  beta       (vectorized)
+##                 (flat)     b      id6                  beta       (vectorized)
+##                 (flat)     b      id7                  beta       (vectorized)
+##                 (flat)     b      id8                  beta       (vectorized)
+##                 (flat)     b      id9                  beta       (vectorized)</code></pre>
 <pre class="r"><code>print(postprior)</code></pre>
 <pre><code>##            prior class      coef group resp dpar nlpar lb ub  source
 ##           (flat)     b                           alpha       default
