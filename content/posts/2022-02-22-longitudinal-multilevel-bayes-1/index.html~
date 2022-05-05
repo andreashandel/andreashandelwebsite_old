@@ -106,7 +106,7 @@ alpha = 20; beta = 2; #just some values to show shape
 mu = log(t^alpha*exp(-beta*t)) #log virus load
 plot(t,mu, type = &quot;l&quot;,ylim=c(0,30)) #looks somewhat like virus load in acute infections</code></pre>
 <div class="figure"><span style="display:block;" id="fig:unnamed-chunk-2"></span>
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-2-1.png" alt="(Log) virus load time series for the heuristic model we will use." width="672" />
+<img src="index_files/figure-html/unnamed-chunk-2-1.png" alt="(Log) virus load time series for the heuristic model we will use." width="672" />
 <p class="caption">
 Figure 2: (Log) virus load time series for the heuristic model we will use.
 </p>
@@ -464,11 +464,11 @@ p3 &lt;- ggplot(m3_dat) +
   theme_minimal()</code></pre>
 <p>Now, let’s plot the simulated data. For each plot, the lines show the deterministic mean trajectory, and the symbols show the outcomes, which have some extra variation on top, determined by the value of <span class="math inline">\(\sigma\)</span>.</p>
 <pre class="r"><code>plot(p1)</code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/showplots-1.png" width="672" /></p>
 <pre class="r"><code>plot(p2)</code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-2.png" width="672" /></p>
+<p><img src="index_files/figure-html/showplots-2.png" width="672" /></p>
 <pre class="r"><code>plot(p3)</code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-3.png" width="672" /></p>
+<p><img src="index_files/figure-html/showplots-3.png" width="672" /></p>
 <p>As you can see, the priors for model 1 are so wide that some of the resulting trajectories are not reasonable. The variation between individuals is so strong that the dose effect - which we programmed into the simulated data to exist - is swamped out. That could certainly be true for real data, sometimes there is just too much noise/variability to detect a pattern, even if it exists. But some of the trajectories produce virus load that’s just biologically unreasonable (note how high the y-values go.)</p>
 <p>On the other extreme, the priors for model 2 allow so little variation that the individual-level variation is minimal and the only effect that is noticable is the dose dependence we assumed in our model (by setting <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> to non-zero values).</p>
 <p>Model 3 produces the most reasonable trajectories, with both the dose-effect showing, and some variation between individuals.</p>

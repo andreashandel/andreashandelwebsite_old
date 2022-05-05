@@ -2,8 +2,8 @@
 title: Generating (longitudinal) simulated data  
 summary: A brief discussion on generating simulated data.
 author: Andreas Handel
-date: '2022-03-30'
-lastMod: "2022-03-30"
+date: '2022-04-30'
+lastMod: "2022-04-30"
 slug: generating-simulated-data
 categories: 
 - R
@@ -28,16 +28,17 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::read_chunk('simulatedata.R')
 ```
 
-This is a brief tutorial and worked example on generating simulated data.
+This is a brief tutorial and worked example on generating simulated data. The focus is on longitudinal/(repeat measure/time-series) data.
 
 
 # Introduction
 
-I recently wrote a multi-part series of blog posts discussing the fitting of longitudinal data using multi-level Bayesian models. (Part 1 [starts here](/posts/longitudinal-multilevel-bayesian-analysis-2/) ). As part of this series of posts, I generated data, then subsequently fit it. 
+I recently wrote a multi-part series of blog posts discussing the fitting of longitudinal data using multi-level Bayesian models. (Part 1 [starts here](/posts/longitudinal-multilevel-bayesian-analysis-1/) ). As part of this series of posts, I generated/simulated data, then subsequently fit it. 
 
-It seemed worthwhile to me to have a separate discussion on just the topic of generating and using simulated data, independent of any specific model fitting approach. Being able to explore self-generated data is very useful. I started writing a post, and as I was working on it, I again (like in my previous set of posts) realized that it would be good to split it into pieces. I guess I just don't know how to be concise `r emoji::emoji('grin')`. As of right now, this series of posts consist of the following:
+It seemed worthwhile to me to have a separate discussion on just the topic of generating and using simulated data, independent of any specific model fitting approach. Being able to explore self-generated data is very useful. I started writing a post, and as I was working on it, I realized (like in my previous set of posts) that it would be good to split it into pieces. I guess I just don't know how to be concise `r emoji::emoji('grin')`. As of right now, this series of posts consist of the following:
+
 * A general discussion of the why and how of generating simulated data can be found [here](DUMMY).
-* A discussion and examples for generating common _rectangular_ data can be found [here](DUMMY).
+* A discussion and examples for generating common _rectangular_ data (i.e. not longitudinal/time-series) can be found [here](DUMMY).
 * In this post, I will focus on the mechanics of generating longitudinal data.
 
 
@@ -46,8 +47,7 @@ It seemed worthwhile to me to have a separate discussion on just the topic of ge
 
 If you are doing any type of data analysis, it is often a very good idea to first explore your analysis methods and pipeline with data you generated yourself. This way, you know what to expect and can test everything. It does not matter what kind of statistical or machine learning analysis approach you plan on taking, exploring your approaches with self-generated data is always useful.
 
-Generating data is not difficult. Thus, the following tutorial is fairly basic. If you are an experienced `R` coder or analyst, this might not teach you much. I hope I wrote it at the right level for those who are new to the idea of generating their own data.
-
+Writing code to generate data is generally not too difficult. A bit of thought needs to be put into the structure of the data one wants to generate, and how to accomplish it. If you are new to the idea of generating/simulating data, and are curious how to do it, especially for time-series data, this tutorial is hopefully useful. 
 
 
 # The setup

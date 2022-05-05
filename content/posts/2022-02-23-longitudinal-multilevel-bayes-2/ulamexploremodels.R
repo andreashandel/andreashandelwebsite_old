@@ -170,6 +170,11 @@ pairs(fl[[4]]$fit, pars = c("a0[16]","a0[17]","a0[18]","a0[19]","a1"))
 # mean of a0 prior
 pairs(fl[[4]]$fit, pars = c("mu_a","mu_b","a1","b1"))
 
+#saving one plot so I can use as featured image
+png(filename = "featured.png", width = 6, height = 6, units = "in", res = 300)
+pairs(fl[[4]]$fit, pars = c("mu_a","mu_b","a1","b1"))
+dev.off()
+
 
 ## ---- mod_4_4a_exploration --------
 # model 4
@@ -311,8 +316,6 @@ for (n in 1:length(fl))
     theme_minimal() +
     ggtitle(title)
 }
-#saving one plot so I can use as featured image
-ggsave(file = paste0("fit_m4.png"), plotlist[[4]], dpi = 300, units = "in", width = 7, height = 7)
 
 
 

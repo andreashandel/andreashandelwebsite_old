@@ -217,7 +217,7 @@ Based on these diagnostic outputs, it seems the chains converged well. One inter
 
 ## Models 1 and 3
 
-Now I'll look at bit more carefully at the different models. We start by comparing fits for models 1 and 3. Those two are essentially the same model, with the only difference being wider priors for the individual-level parameters in model 1. It is worth mentioning that when running the fitting routine, model 1 takes much longer to fit than model 3. The wide priors made the fitting efficiency poor. But let's see how it impacts the results.
+Now I'll look at bit more carefully at the different models. We start by comparing fits for models 1 and 3. Those two are essentially the same model, with the only difference being wider priors for the individual-level parameters in model 1. It is worth mentioning that when running the fitting routine, model 1 takes much longer to fit than model 3. With the settings I used, runtimes were `r round(fl[[1]]$runtime,0)` versus `r round(fl[[3]]$runtime,0)` minutes. The wide priors made the fitting efficiency poor. But let's see how it impacts the results.
 
 First, we explore priors and posteriors. They are easy to extract from the models using the `extract.prior()` and `extract.samples()` functions from `rethinking`. 
 
@@ -230,7 +230,7 @@ Now we can plot the distributions. Note that for the individual-level parameters
 ```{r mod_1_3_prior_plots, message = FALSE}
 ```
 
-We set up the models to have wider $a_0$ and $b_0$ priors for model 1, the same priors for the $a_1$ and $b_1$ parameters. We can see that in the figures. Comparing the results for the 2 models, We find that changing the priors has an impact on the posterior distributions, especially for $a_1$ and $b_1$. Not only dies model 3 lead to more peaked posteriors, they are also not centered at the same values. I don't think that's a good sign. We want the data to dominate the results, the priors should just be there to ensure the models explore the right parameter space and don't do anything crazy. The fact that the same model, started with different priors, leads to different posterior distributions is in my opinion concerning. It might suggest that we are overfitting and have non-identifiability problems here.
+We set up the models to have wider $a_0$ and $b_0$ priors for model 1, the same priors for the $a_1$ and $b_1$ parameters. We can see that in the figures. Comparing the results for the 2 models, We find that changing the priors has an impact on the posterior distributions, especially for $a_1$ and $b_1$. Not only does model 3 lead to more peaked posteriors, they are also not centered at the same values. I don't think that's a good sign. We want the data to dominate the results, the priors should just be there to ensure the models explore the right parameter space and don't do anything crazy. The fact that the same model, started with different priors, leads to different posterior distributions is in my opinion concerning. It could be that with more sampling, the posteriors might get closer. Or it might suggest that we are overfitting and have non-identifiability problems here.
 
 One way to check that further is to look at potential correlations between parameter posterior distributions, e.g., using a `pairs()` plot as shown above. 
 Here are such plots for the parameters associated with $\alpha$ for model 1. I only plot a few for each dose, otherwise the plots won't be legible inside this html document. 
@@ -239,9 +239,9 @@ But you can try for yourself, if you make the plot large enough you can fit them
 ```{r mod_1_3_pair_plots, message = FALSE}
 ```
 
-Recall that we set up the model such that dose is non-zero for low and high dose, while for the intermediate dose it is zero. What seems to happen is that if the dose effect, i.e., $a_1$, is present, there is a strong correlation among that parameter and the individual-level parameters for that dose. That part makes some sense to me. Either $a_0$ or $a_1$ can change $\alpha$ and thus the trajectory, thus if one is low, the other might be high, and the reverse.
+Recall that we set up the model such that dose is non-zero for low and high dose, while for the intermediate dose it is zero. What seems to happen is that if the dose effect, i.e., $a_1$, is present, there is a strong correlation among that parameter and the individual-level parameters for that dose. That part makes some sense to me. Both $a_{0,i}$ or $a_1$ can change $\alpha$ and thus the trajectory, thus if one is low, the other might be high, and the reverse.
 
-What I'm not clear about is why the individual parameter values also correlate strongly with each other. I would have expected each of them to account for individual level variation, and as such not depend much on the value of another individual level parameter. They somehow seem to interact through $a_1$, given that the correlation disappears for the medium dose, where the $a_1$ term is zero. I don't as of yet fully understand what's going on `r emoji::emoji('shrug')`, but it is another sign of that we are overfitting and have non-identifiability problems.
+Because every $a_{0,i}$ is correlated with $a_1$ in this way, this also leads to correlations among the $a_{0,i}$ values. I am surprised that this is an essentially perfect correlation. Maybe, if I thought about it harder and/or did the math, it would be clear that it needs to be that way. But I haven't yet, so for now I'm just taking it as given `r emoji::emoji('grin')`. Overall, this is another sign of that we might be overfitting and have non-identifiability problems, i.e. combinations for different values of $a_{0,i}$ and $a_1$ can lead to more or less the same results (everything I write here of course also holds for the $b_{0,i}$ and $b_1$ parameters).
 
 
 
@@ -265,7 +265,7 @@ Again, note that the only thing we changed between models 1 and 3 are to make th
 
 Before we move on, let's reflect on the truth, i.e. the actual values of the parameters, which we know here since we created/simulated the data. To generate the data, we used these parameter values. $\sigma =$ `r simdat$m3pars['sigma']`, $\mu_a =$ `r pars['a0_mu']`, $\mu_b =$ `r pars['b0_mu']`, $a_1 =$ `r pars['a1']`, $b_1 =$ `r pars['b1']`. We also said that our main scientific question is if there is a dose effect, i.e. non-zero $a_1$ and $b_1$. 
 
-The models find estimates of $\mu_a$, $\mu_b$  and $\sigma$ that are close to what we used. The models also estimate $a_1$ centered around a positive value and $b_1$ on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models, we aren't able to convincingly recover the parameters used to generate the data. I'm not sure if increasing the sampling would help, but it's already taking quite long to run, especially for model 1, so I don't really want to wait much longer. As we'll see below, alternative models do better.
+The models find estimates of $\mu_a$, $\mu_b$  and $\sigma$ that are close to what we used. The models also estimate $a_1$ centered around a positive value and $b_1$ on a negative, but the estimated variability in those parameters is wide and lies both on the positive and negative side and includes zero. So with these models, we aren't able to convincingly recover the parameters used to generate the data. I'm not sure if increasing the sampling would help. Both models, especially for model 1, already taking quite a while to run, thus I'm not too keen to try it with even more samples. As we'll see below, alternative models do better.
 
 
 ## Models 2 and 2a
@@ -326,6 +326,8 @@ We can also again look at the numerical outputs from the `precis` function.
 ```
 
 The numerics confirm that the two models lead to essentially the same results. The values for `n_eff` differ between models, though neither model is consistently larger. This suggests that each model formulation had advantages in sampling for some of the parameters.
+
+In terms of run times, there wasn't much difference, with `r round(fl[[4]]$runtime,0)` minutes for model 4 versus `r round(fl[[6]]$runtime,0)` minutes for model 4a.
 
 If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true $\mu_a$, $\mu_b$ and $\sigma$ are estimated fairly well. Estimates for $a_1$ and $b_1$ are now also pretty good, and the credible intervals are less wide, such that those estimates are now reliably positive/negative. 
 
