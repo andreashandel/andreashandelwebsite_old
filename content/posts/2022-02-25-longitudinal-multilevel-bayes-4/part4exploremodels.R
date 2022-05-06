@@ -35,7 +35,7 @@ predfunction <- function(fl,fitdat)
                           dose = 0,
                           dose_adj = 0,
                           dose_adj2 = 0,
-                          dose_cat = 0,
+                          dose_cat = "0",
                           dose_cat2 = 0
     )
     #add right dose information for each individual
@@ -58,7 +58,7 @@ predfunction <- function(fl,fitdat)
       }
       if ("dose_cat" %in% names(fitdat)) {
         nowdose_cat = unique(fitdat$dose_cat[fitdat$id == k])
-        preddat[(preddat$id == k),"dose_cat"] = nowdose_cat
+        preddat[(preddat$id == k),"dose_cat"] = as.character(nowdose_cat)
       }
       if ("dose_cat2" %in% names(fitdat)) {
         nowdose_cat2 = unique(fitdat$dose_cat2[fitdat$id == k])
@@ -98,7 +98,7 @@ predfunction <- function(fl,fitdat)
     #place all predictions into a data frame
     #and store in a list for each model
     fitpred[[n]] = data.frame(id = as.factor(preddat$id),
-                              dose = as.factor(preddat$dose_cat),
+                              dose = preddat$dose_cat,
                               predtime = preddat$time,
                               Estimate = modmean,
                               Q79lo = modPI79[1,], Q79hi = modPI79[2,],
@@ -130,8 +130,8 @@ plotfunction <- function(fl,fitpred,fitdat)
     #adding titles to plots
     title = fl[[n]]$model
 
-    plotlist[[n]] <- ggplot(data = fitpred[[n]], aes(x = predtime, y = Estimate, group = id, color = dose ) ) +
-      geom_line() +
+    plotlist[[n]] <- ggplot(data = fitpred[[n]], aes(x = predtime, y = Estimate, group = id, color = dose )) +
+      geom_line(show.legend = F ) +
       geom_ribbon(aes(x=predtime, ymin=Q89lo, ymax=Q89hi, fill = dose, color = NULL), alpha=0.3, show.legend = F) +
       geom_ribbon(aes(x=predtime, ymin=Qsimlo, ymax=Qsimhi, fill = dose, color = NULL), alpha=0.1, show.legend = F) +
       geom_point(data = plotdat, aes(x = time, y = outcome, group = id, color = dose), shape = 1, size = 2, stroke = 2) +
@@ -173,8 +173,6 @@ fitpred <- predfunction(fl,fitdat)
 plotlist <- plotfunction(fl,fitpred,fitdat)
 plot(plotlist[[1]])
 plot(plotlist[[2]])
-#save a plot so we can use it in the blog post
-ggsave(file = paste0("featured.png"), plotlist[[2]], dpi = 300, units = "in", width = 6, height = 6)
 
 
 ## ---- load_big --------
@@ -190,28 +188,41 @@ print(precis(fl[[1]]$fit,depth=1),digits = 2)
 print(c(a0mean,b0mean))
 
 
+## ---- predict_big --------
+fitpred <- predfunction(fl,fitdat)
+
+## ---- plot_big --------
+plotlist <- plotfunction(fl,fitpred,fitdat)
+#update plot
+p1 <- plotlist[[1]] + scale_y_continuous(limits = c(-30,70))
+plot(p1)
+#save plot so we can use it in the blog post
+ggsave(file = paste0("featured.png"), p1, dpi = 300, units = "in", width = 6, height = 6)
+
+
+
 ## ---- load_altpos --------
 #loading previously saved fits.
 filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_altpos", ext="Rds")
 fl <- readRDS(filepath)
 fitdat <- fl[[1]]$fit@data
 
-## ---- explore_altpos --------
+## ---- explore_altpos_m3 --------
 #Model 3
 a0mean = mean(precis(fl[[1]]$fit,depth=2,"a0")$mean)
 b0mean = mean(precis(fl[[1]]$fit,depth=2,"b0")$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)
 print(c(a0mean,b0mean))
 
+## ---- explore_altpos_m5 --------
 #Model 5
 print(precis(fl[[2]]$fit,depth=1),digits = 2)
 a0mean = mean(precis(fl[[2]]$fit,depth=2,"a0")$mean)
 b0mean = mean(precis(fl[[2]]$fit,depth=2,"b0")$mean)
 print(c(a0mean,b0mean))
-
 # computing values that correspond to a1 and b1
-a1est = (precis(fl[[2]]$fit,pars="a2")[1,]-1)*a0mean*(max(fitdat$dose)-median(fitdat$dose))
-b1est = (precis(fl[[2]]$fit,pars="b2")[1,]-1)*a0mean*(max(fitdat$dose)-median(fitdat$dose))
+a1est = (precis(fl[[2]]$fit,pars="a2")[1,]-1)*a0mean/max(fitdat$dose)
+b1est = (precis(fl[[2]]$fit,pars="b2")[1,]-1)*b0mean/max(fitdat$dose)
 print(c(a1est,b1est))
 
 ## ---- compare_altpos --------

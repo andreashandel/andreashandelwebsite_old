@@ -413,7 +413,7 @@ $$
 
 ## Comment on terminology
 
-I have been talking about 4 different models (or 5 if you count model 2a). As I'm sure you realized, some models are structurally the same, just with different choices for the priors. In a Bayesian framework, the priors (which includes choices for both the distribution and values) are part of the model, thus in that sense, model 1-3 are different models. For the purpose of this tutorial I'll take that perspective and consider them separate models. It also makes it easier to talk about them by giving each their own label/number.
+I have been talking about 4 different models (or 5 if you count model 2a). As I'm sure you realized, some models are structurally the same, just with different choices for the priors. In a Bayesian framework, the priors (which includes choices for both the distribution and values) are part of the model, thus in that sense, model 1 and 3 can be considered different models, even if we only change the values for the variance priors. For the purpose of this tutorial I'll take that perspective and consider them separate models. It also makes it easier to talk about them by giving each their own label/number.
 
 
 # Simulating data

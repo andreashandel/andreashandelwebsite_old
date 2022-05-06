@@ -28,19 +28,19 @@ fitdat <- simdat$m3
 pars <- simdat$m3pars
 
 ## ---- diagnostics ------
-# Model 5 summary
+# Model 2a summary
 show(fl[[5]]$fit)
 
 ## ---- traceplot ------
-# Model 5 trace plots and trank plots
+# Model 2a trace plots and trank plots
 traceplot(fl[[5]]$fit, pars = c("a0","b0","a1","b1","sigma"))
 
 ## ---- trankplot ------
-# Model 5 trank plots
+# Model 2a trank plots
 trankplot(fl[[5]]$fit, pars = c("a0","b0","a1","b1","sigma"))
 
 ## ---- pairplot ------
-# Model 5 pair plot
+# Model 2a pair plot
 # Correlation between posterior samples of parameters
 pairs(fl[[5]]$fit, pars = c("a0","b0","a1","b1","sigma"))
 

@@ -18,11 +18,6 @@ image:
   preview_only: no
 ---
 
-```{r setup, include=FALSE}
-library(emoji)
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 
 ```{r, include=FALSE, cache=FALSE}
 knitr::read_chunk('part4fitmodels.R')
@@ -40,9 +35,6 @@ I assume you read through the main posts of the tutorial, namely [this one descr
 
 Here, I'm doing a few additional explorations that just didn't fit into the other posts. 
 
-Again as previously, the code shown below are housed in 2 separate R scripts, which you can get [here](/posts/longitudinal-multilevel-bayesian-analysis-4/part4fitmodels.R) and [here](/posts/longitudinal-multilevel-bayesian-analysis-4/part4exploremodels.R).
-
-
 
 # Who this is (not) for
 
@@ -51,8 +43,10 @@ This is only for you if you read my main tutorial posts and enjoyed my musings a
 
 # R setup
 
-We need the same packages as previously. See comments in previous posts on how to get `Stan` installed and working.
 
+Again as previously, the code shown below are housed in 2 separate R scripts, which you can get [here](/posts/longitudinal-multilevel-bayesian-analysis-4/part4fitmodels.R) and [here](/posts/longitudinal-multilevel-bayesian-analysis-4/part4exploremodels.R). You can run the scripts one after the other. The code chunks don't quite show up in that order in this post.
+
+We need the same packages as previously. See comments in previous posts on how to get `Stan` installed and working.
 
 ```{r, packages, message = FALSE, warning = FALSE}
 ```
@@ -62,6 +56,36 @@ These are additional packages for the exploration part.
 ```{r, packages2, message = FALSE, warning = FALSE}
 ```
 
+# Defining a few functions
+
+For the explorations below, I will repeat some parts (fitting and plotting). 
+For simplicity and to streamline code, I defined a few functions that I'm using repeatedly.
+
+This function specifies the fitting part:
+
+```{r modelfitting-function}
+```
+
+
+This function does the prediction for the different models:
+
+```{r predict_function}
+```
+
+
+This function does the plotting:
+
+```{r plot_function}
+```
+
+
+These are the settings we use for all fits shown in this post:
+
+```{r fitsettings}
+```
+
+
+With these function definitions and specifications out of the way, we can get to some more model explorations.
 
 
 # Alternative model for time-series trajectory
@@ -95,22 +119,15 @@ In this notation, $x_i$ is the dose, transformed and scaled as needed.
 The same ideas about model specification, exponentiating to avoid negative values, and all of that still applies. You now need to specify priors for the parameters in each of the four equations above, instead of the 2 equations we had previously. It's conceptionally the same, just a bit more typing and coding. 
 Since there isn't anything fundamentally new to show or learn, I'm not implementing the code. I'm confident once you walked through the prior posts in the tutorial, you can copy & paste your way to working code for this bigger model. So if you feel like it, go ahead and implement the above model, both to simulate data and then to fit it. 
 
-The model you use to simulate data does not have to be the same you use to fit it. You could for instance try to simulate data with the 2-parameter model and fit with the 4-parameter one, or the reverse. I haven't tried it, but I expect that using the 2-parameter model to simulate data and the 4-parameter model to fit should work ok (since the 4 parameter model is flexible enough) but the reverse is likely not working too well. In either case, the fits are likely worse than if you use the same model to simulate the data and fit it. That's not surprising. It illustrates the point that choosing the right main function (likelihood and deterministic part), is at least as important - probably more so - than setting priors. Most non-Bayesians get hung up about priors, but the dirty (somewhat)-secret is that the overall model specification - which needs to be done for both frequentist and Bayesian fitting - often has a much more pronounced impact, and choosing the model structure is always based on expertise (or convention, though that's a bad reason), and there are no real rules.
+The model you use to simulate data does not have to be the same you use to fit it. You could for instance try to simulate data with the 2-parameter model and fit with the 4-parameter one, or the reverse. I haven't tried it, but I expect that using the 2-parameter model to simulate data and the 4-parameter model to fit should work ok (since the 4 parameter model is flexible enough) but the reverse is likely not working too well. In either case, the fits are likely worse than if you use the same model to simulate the data and fit it. That's not surprising. 
+
+It illustrates the point that choosing the right main function (likelihood and deterministic part), is at least as important - probably more so - than setting priors. Most non-Bayesians get hung up about priors, but the dirty (somewhat)-secret is that the overall model specification - which needs to be done for both frequentist and Bayesian fitting - often has a much more pronounced impact, and choosing the model structure is always based on expertise (or convention, though that's a bad reason), and there are no real rules.
 
 
 # Fitting an alternative data set
 
 For the main tutorial, I used one of the simulated data sets (as generated by model 3) for fitting purposes, since it had the most realistic structure. But we can of course try to fit the other data sets as well. Here, I'm doing a quick exploration using data set 2. That was the one generated by model 2, which did not have any individual-level variability. Recall that model 2 did not run well at all, while model 2a (basically the same model, just better specified) worked ok, though the fit was not great. Let's see how model 2a does when fitting to a data that has the right overall structure. We'll compare it to model 4.
 
-These are the settings we use for all fits shown in this post:
-
-```{r fitsettings}
-```
-
-I'm also writing a short function for the fitting routine so I don't have to keep re-typing it:
-
-```{r modelfitting-function}
-```
 
 
 Here are the 2 models we want to fit:
@@ -155,20 +172,7 @@ We can compare models:
 Now, with a data structure that does not contain individual level variation, model 2a which does not contain it works ok. 
 
 
-
-Let's look at plots to further see if/how the models differ. Since we do this part multiple times, I defined two functions.
-This first function computes the predictions:
-
-```{r, predict_function}
-```
-
-The second function makes the plots:
-
-```{r, plot_function}
-```
-
-
-Now let's apply these functions to the models we just ran: 
+Let's look at plots to further see if/how the models differ. First we need to make predictions, then we can plot.
 
 ```{r, predict_dat2}
 ```
@@ -177,8 +181,10 @@ Now let's apply these functions to the models we just ran:
 ```{r, plot_dat2, warning = FALSE, message = FALSE}
 ```
 
-For this data set, which as little individual-level variation, the simpler model and the more complex one perform more or less equally well. 
-Depending on the amount of noise ($\sigma$ in the model), at some point we can expect the simple model to not capture things too well anymore. Overall, model choice should be driven by the underlying scientific assumptions. If one expects no or almost no variation between the individual units (e.g. people in our case, but it could be anything else), then a simple model that ignores individual-level variation might be ok. In most cases, a model that allows for such variation seems best. Especially since the adaptive pooling model allows the model to learn the amount of variation that best describes the data, thus it seems - apart from a bit more complex model setup and a longer run time - there is essentially no downside to this type of model.
+For this data set, with little individual-level variation, the simpler model and the more complex one perform more or less equally well. 
+Depending on the amount of noise ($\sigma$ in the model), at some point we can expect the simple model to not capture things too well anymore. 
+
+Generally speaking, model choice should be driven by the underlying scientific assumptions. If one expects no or almost no variation between the individual units (e.g. people in our case, but it could be anything else), then a simple model that ignores individual-level variation might be ok. In most cases, a model that allows for such variation is likely more appropriate. Especially since the adaptive pooling model allows the model to learn the amount of variation that best describes the data, thus it seems - apart from a bit more complex model setup and a longer run time - there is essentially no downside to this type of model.
 
 
 
@@ -207,8 +213,17 @@ Exploring model fits
 ```{r, explore_big}
 ```
 
-Note the message about the hidden parameters, it's 10 times as many as previously, since we have $N$ increased by a factor of 10. If we compare these estimates to those for model 4 in [part 2](/posts/longitudinal-multilevel-bayesian-analysis-2/), we notice that the credible intervals shrank, i.e. the precision increased. This is expected for larger sample size. So, reassuringly, larger sample size behaves as expected, helping the model to make more precise estimates. This will likely also lead to narrower uncertainty intervals for the predictions, but I'm not making those plots here. You can explore those by just copying and pasting the prediction and plot generation code chunks from the previous section.
+Note the message about the hidden parameters, it's 10 times as many as previously, since we have $N$ increased by a factor of 10. If we compare these estimates to those for model 4 in [part 2](/posts/longitudinal-multilevel-bayesian-analysis-2/), we notice that the credible intervals shrank, i.e. the precision increased. This is expected for larger sample size. So, reassuringly, larger sample size behaves as expected, helping the model to make more precise estimates. This should also lead to narrower uncertainty intervals for the predictions. Let's check:
 
+
+```{r, predict_big}
+```
+
+
+```{r, plot_big, warning = FALSE, message = FALSE}
+```
+
+Looks messy, but overall ok.
 
 
 # Alternative to enforcing positivity of parameters
@@ -290,15 +305,24 @@ Running the fits:
 
 
 Let's see what we get with this changed model. 
-For the new model 5, I'm doing the math so we can compare the new with the old parameters.
 
 
 ```{r, load_altpos}
 ```
 
+For model 3, we get the same estimates for the dose parameters. That should be the case, since we are still estimating the impact of changes in (log) dose, as before. 
+The intercept parameters, $a_{0,i}$ and $b_{0,i}$ are now different from previous model fits and the original data generating model. That is also expected, since we generated the data with the model that subtracted the medium dose, but now fit it without that part.
 
-```{r, explore_altpos}
+```{r, explore_altpos_m3}
 ```
+
+
+For the new model 5, I'm doing the math so we can compare the new with the old parameters.
+
+
+```{r, explore_altpos_m5}
+```
+
 
 We find overall similar estimates, but the new model 5 has fairly wide credible intervals.
 
@@ -307,7 +331,7 @@ We can also compare the two models.
 ```{r, compare_altpos}
 ```
 
-The fit quality is more or less the same. Note that model 5 took almost twice as long to run compared to model 3.
+The fit quality is more or less the same. Note that model 3 ran faster than model 5, `r round(fl[[1]]$runtime,0)` versus `r round(fl[[2]]$runtime,0)` minutes.
 
 Finally, let's do the plots to check that they look more or less the same.
 
@@ -320,7 +344,7 @@ Now let's make and look at the plots.
 ```{r, plot_altpos, warning = FALSE, message = FALSE}
 ```
 
-We do find that the plots for the 2 models are pretty much the same. That's good, since those are the same models, just written in different forms. In this case, the original way of writing is better since it runs faster.
+We do find that the plots for the 2 models are pretty much the same. That's good, since those are essentially the same models, just written in different forms. In this case, the original way of writing seems better since it runs faster.
 
 
 # Treating dose as an __unordered__ categorical variable

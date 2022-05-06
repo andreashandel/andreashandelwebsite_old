@@ -12,8 +12,16 @@ library('fs') #for file path
 
 ## ---- data --------
 simdat <- readRDS("simdat.Rds")
+#using dataset 3 for fitting
+#also removing anything in the dataframe that's not used for fitting
+#makes the ulam/Stan code more robust
+fitdat=list(id=simdat[[3]]$id,
+            outcome = simdat[[3]]$outcome,
+            dose_adj = simdat[[3]]$dose_adj,
+            time = simdat[[3]]$time)
 #pulling out number of observations
 Ntot = length(unique(simdat$m3$id))
+
 
 ## ---- model-1 --------
 #wide-prior, no-pooling model
@@ -123,7 +131,7 @@ m4a <- alist(
   a1 ~ dnorm(0.3, 1),
   b1 ~ dnorm(-0.3, 1),
   sigma ~ cauchy(0, 1)
-  
+
   )
 
 ## ---- model-5 --------
@@ -133,14 +141,14 @@ m4a <- alist(
 m5 <- alist(
   # distribution of outcome
   outcome ~ dnorm(mu, sigma),
-  
+
   # main equation for time-series trajectory
   mu <- exp(alpha)*log(time) - exp(beta)*time,
-  
+
   #equations for alpha and beta
   alpha <-  a0[id],
   beta <-  b0[id],
-  
+
   #priors
   a0[id] ~ dnorm(2,  10),
   b0[id] ~ dnorm(0.5, 10),
@@ -189,13 +197,6 @@ modellist = list(m1=m1,m2=m2,m3=m3,m4=m4,m2a=m2a,m4a=m4a,m5=m5)
 # set up a list in which we'll store our results
 fl = vector(mode = "list", length = length(modellist))
 
-#fitting dataset 3
-#also removing anything in the dataframe that's not used for fitting
-#makes the ulam/Stan code more robust
-fitdat=list(id=simdat[[3]]$id,
-            outcome = simdat[[3]]$outcome,
-            dose_adj = simdat[[3]]$dose_adj,
-            time = simdat[[3]]$time)
 
 #setting for parameter constraints
 constraints = list(sigma="lower=0",sigma_a="lower=0",sigma_b="lower=0")
@@ -218,7 +219,8 @@ for (n in 1:length(modellist))
                           start=startlist[[n]],
                           constraints=constraints,
                           log_lik=TRUE, cmdstan=TRUE,
-                          control=list(adapt_delta=adapt_delta, max_treedepth = max_td),
+                          control=list(adapt_delta=adapt_delta,
+                                       max_treedepth = max_td),
                           chains=chains, cores = cores,
                           warmup = warmup, iter = iter,
                           seed = seed

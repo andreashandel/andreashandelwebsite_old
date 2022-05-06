@@ -114,7 +114,7 @@ m6 <- alist(
 #you might want to adjust based on your computer
 warmup = 4000
 iter = warmup + floor(warmup/2)
-max_td = 15 #tree depth
+max_td = 17 #tree depth
 adapt_delta = 0.999
 chains = 5
 cores  = chains
@@ -277,7 +277,7 @@ simdat <- readRDS("simdat.Rds")
 fitdat=list(id=simdat[[3]]$id,
             outcome = simdat[[3]]$outcome,
             dose = simdat[[3]]$dose,
-            dose_adj2 = simdat[[3]]$dose_adj/max(simdat[[3]]$dose),
+            dose_adj2 = simdat[[3]]$dose/max(simdat[[3]]$dose),
             dose_cat = simdat[[3]]$dose_cat,
             time = simdat[[3]]$time
             )

@@ -25,7 +25,6 @@ image:
 <h1>Introduction</h1>
 <p>I assume you read through the main posts of the tutorial, namely <a href="/posts/longitudinal-multilevel-bayesian-analysis-1/">this one describing model setup and data generation</a>, and <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/">this one describing fitting with rethinking</a>. You probably also looked at the <a href="/posts/longitudinal-multilevel-bayesian-analysis-3/">fitting with <code>brms</code></a> post, though that’s optional.</p>
 <p>Here, I’m doing a few additional explorations that just didn’t fit into the other posts.</p>
-<p>Again as previously, the code shown below are housed in 2 separate R scripts, which you can get <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/part4fitmodels.R">here</a> and <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/part4exploremodels.R">here</a>.</p>
 </div>
 <div id="who-this-is-not-for" class="section level1">
 <h1>Who this is (not) for</h1>
@@ -33,6 +32,7 @@ image:
 </div>
 <div id="r-setup" class="section level1">
 <h1>R setup</h1>
+<p>Again as previously, the code shown below are housed in 2 separate R scripts, which you can get <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/part4fitmodels.R">here</a> and <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/part4exploremodels.R">here</a>. You can run the scripts one after the other. The code chunks don’t quite show up in that order in this post.</p>
 <p>We need the same packages as previously. See comments in previous posts on how to get <code>Stan</code> installed and working.</p>
 <pre class="r"><code>library(&#39;fs&#39;) #for file path
 library(&#39;ggplot2&#39;) # for plotting
@@ -45,47 +45,11 @@ library(&#39;cmdstanr&#39;) #for model fitting
 library(&#39;rethinking&#39;) #for model fitting
 library(&#39;fs&#39;) #for file path</code></pre>
 </div>
-<div id="alternative-model-for-time-series-trajectory" class="section level1">
-<h1>Alternative model for time-series trajectory</h1>
-<p>In the main tutorial, I used the following two-parameter model to describe hypothetical virus-load time series for an acute virus infection.</p>
-<p><span class="math display">\[
-\mu_{i,t} = \log\left( t_i^{\alpha_i} e^{-\beta_i t_i} \right)  
-\]</span></p>
-<p>I mentioned there that this equation does in fact not capture real data too well. For our research project, we used a somewhat more flexible equation, given as</p>
-<p><span class="math display">\[
-\mu_{i,t} = \log\left( \frac{2 p_i}{e^{-g_i  (k_i - t_i)} + e^{d_i  (t_i - k_i)}}\right).
-\]</span></p>
-<p>Instead of two parameters, this model has 4. The parameters approximately represent virus peak, <span class="math inline">\(p_i\)</span>, initial growth rate, <span class="math inline">\(g_i\)</span>, decay rate, <span class="math inline">\(d_i\)</span>, and time of peak, <span class="math inline">\(k_i\)</span>. Colleagues <a href="https://bmcpublichealth.biomedcentral.com/articles/10.1186/1471-2458-11-S1-S10">showed previously</a> that this can fit virus load data for acute infections fairly well. The original use was for influenza, we found that it also worked reasonably well for our norovirus data, and thus used it. For the tutorial, I decided to stick to the simpler 2-parameter model. But everything I discussed there applies to this alternative model. For all 4 parameters, we can define individual-level and population level parameters, make them dose-dependent, etc. The main models for the 4 parameters are:</p>
-<p><span class="math display">\[
-\begin{aligned}
-p_{i} &amp; =  p_{0,i} + p_1 x_i  \\
-g_{i} &amp; =  g_{0,i} + g_1 x_i \\
-d_{i} &amp; =  d_{0,i} + d_1 x_i \\
-k_{i} &amp; =  k_{0,i} + k_1 x_i \\
-\end{aligned}
-\]</span></p>
-<p>In this notation, <span class="math inline">\(x_i\)</span> is the dose, transformed and scaled as needed.</p>
-<p>The same ideas about model specification, exponentiating to avoid negative values, and all of that still applies. You now need to specify priors for the parameters in each of the four equations above, instead of the 2 equations we had previously. It’s conceptionally the same, just a bit more typing and coding.
-Since there isn’t anything fundamentally new to show or learn, I’m not implementing the code. I’m confident once you walked through the prior posts in the tutorial, you can copy &amp; paste your way to working code for this bigger model. So if you feel like it, go ahead and implement the above model, both to simulate data and then to fit it.</p>
-<p>The model you use to simulate data does not have to be the same you use to fit it. You could for instance try to simulate data with the 2-parameter model and fit with the 4-parameter one, or the reverse. I haven’t tried it, but I expect that using the 2-parameter model to simulate data and the 4-parameter model to fit should work ok (since the 4 parameter model is flexible enough) but the reverse is likely not working too well. In either case, the fits are likely worse than if you use the same model to simulate the data and fit it. That’s not surprising. It illustrates the point that choosing the right main function (likelihood and deterministic part), is at least as important - probably more so - than setting priors. Most non-Bayesians get hung up about priors, but the dirty (somewhat)-secret is that the overall model specification - which needs to be done for both frequentist and Bayesian fitting - often has a much more pronounced impact, and choosing the model structure is always based on expertise (or convention, though that’s a bad reason), and there are no real rules.</p>
-</div>
-<div id="fitting-an-alternative-data-set" class="section level1">
-<h1>Fitting an alternative data set</h1>
-<p>For the main tutorial, I used one of the simulated data sets (as generated by model 3) for fitting purposes, since it had the most realistic structure. But we can of course try to fit the other data sets as well. Here, I’m doing a quick exploration using data set 2. That was the one generated by model 2, which did not have any individual-level variability. Recall that model 2 did not run well at all, while model 2a (basically the same model, just better specified) worked ok, though the fit was not great. Let’s see how model 2a does when fitting to a data that has the right overall structure. We’ll compare it to model 4.</p>
-<p>These are the settings we use for all fits shown in this post:</p>
-<pre class="r"><code>######################################
-# Define general fit settings
-######################################
-#general settings for fitting
-#you might want to adjust based on your computer
-warmup = 400
-iter = warmup + floor(warmup/2)
-max_td = 15 #tree depth
-adapt_delta = 0.999
-chains = 5
-cores  = chains
-seed = 1234</code></pre>
-<p>I’m also writing a short function for the fitting routine so I don’t have to keep re-typing it:</p>
+<div id="defining-a-few-functions" class="section level1">
+<h1>Defining a few functions</h1>
+<p>For the explorations below, I will repeat some parts (fitting and plotting).
+For simplicity and to streamline code, I defined a few functions that I’m using repeatedly.</p>
+<p>This function specifies the fitting part:</p>
 <pre class="r"><code>######################################
 # Function to fit each model
 ######################################
@@ -116,6 +80,180 @@ fitfunction &lt;- function(model, data, start, constraints)
 
   return(fl)
 }</code></pre>
+<p>This function does the prediction for the different models:</p>
+<pre class="r"><code># defining a function so I don&#39;t need to re-type the same code
+predfunction &lt;- function(fl,fitdat)
+{
+
+  #this will contain all the predictions from the different models
+  fitpred = vector(mode = &quot;list&quot;, length = length(fl))
+
+  # we are looping over each fitted model
+  for (n in 1:length(fl))
+  {
+    #get current model
+    nowmodel = fl[[n]]$fit
+
+    #make new data for which we want predictions
+    #specifically, more time points so the curves are smoother
+    timevec = seq(from = 0.1, to = max(fitdat$time), length=100)
+    Ntot = max(fitdat$id)
+    #new data used for predictions
+    #make variables for all versions of dose we use
+    preddat = data.frame( id = sort(rep(seq(1,Ntot),length(timevec))),
+                          time = rep(timevec,Ntot),
+                          dose = 0,
+                          dose_adj = 0,
+                          dose_adj2 = 0,
+                          dose_cat = &quot;0&quot;,
+                          dose_cat2 = 0
+    )
+    #add right dose information for each individual
+    for (k in 1:Ntot)
+    {
+      #get actual dose for a given individual
+      #assign that dose
+      #need the if statements because not every data set has each dose
+      if (&quot;dose&quot; %in% names(fitdat)) {
+        nowdose = unique(fitdat$dose[fitdat$id == k])
+        preddat[(preddat$id == k),&quot;dose&quot;] = nowdose
+      }
+      if (&quot;dose_adj&quot; %in% names(fitdat)) {
+        nowdose_adj = unique(fitdat$dose_adj[fitdat$id == k])
+        preddat[(preddat$id == k),&quot;dose_adj&quot;] = nowdose_adj
+      }
+      if (&quot;dose_adj2&quot; %in% names(fitdat)) {
+        nowdose_adj2 = unique(fitdat$dose_adj2[fitdat$id == k])
+        preddat[(preddat$id == k),&quot;dose_adj2&quot;] = nowdose_adj2
+      }
+      if (&quot;dose_cat&quot; %in% names(fitdat)) {
+        nowdose_cat = unique(fitdat$dose_cat[fitdat$id == k])
+        preddat[(preddat$id == k),&quot;dose_cat&quot;] = as.character(nowdose_cat)
+      }
+      if (&quot;dose_cat2&quot; %in% names(fitdat)) {
+        nowdose_cat2 = unique(fitdat$dose_cat2[fitdat$id == k])
+        preddat[(preddat$id == k),&quot;dose_cat2&quot;] = nowdose_cat2
+      }
+    }
+
+    # pull out posterior samples for the parameters
+    post &lt;- extract.samples(nowmodel)
+
+    # estimate and CI for parameter variation
+    # this uses the link function from rethinking
+    # we ask for predictions for the new data generated above
+    linkmod &lt;- rethinking::link(nowmodel, data = preddat)
+
+    #computing mean and various credibility intervals
+    #these choices are inspired by the Statistical Rethinking book
+    #and purposefully do not include 95%
+    #to minimize thoughts of statistical significance
+    #significance is not applicable here since we are doing bayesian fitting
+    modmean &lt;- apply( linkmod$mu , 2 , mean )
+    modPI79 &lt;- apply( linkmod$mu , 2 , PI , prob=0.79 )
+    modPI89 &lt;- apply( linkmod$mu , 2 , PI , prob=0.89 )
+    modPI97 &lt;- apply( linkmod$mu , 2 , PI , prob=0.97 )
+
+    # estimate and CI for prediction intervals
+    # this uses the sim function from rethinking
+    # the predictions factor in additional uncertainty around the mean (mu)
+    # as indicated by sigma
+    simmod &lt;- rethinking::sim(nowmodel, data = preddat)
+
+    # mean and credible intervals for outcome predictions
+    # modmeansim should agree with above modmean values
+    modmeansim &lt;- apply( simmod , 2 , mean )
+    modPIsim &lt;- apply( simmod , 2 , PI , prob=0.89 )
+
+    #place all predictions into a data frame
+    #and store in a list for each model
+    fitpred[[n]] = data.frame(id = as.factor(preddat$id),
+                              dose = preddat$dose_cat,
+                              predtime = preddat$time,
+                              Estimate = modmean,
+                              Q79lo = modPI79[1,], Q79hi = modPI79[2,],
+                              Q89lo = modPI89[1,], Q89hi = modPI89[2,],
+                              Q97lo = modPI97[1,], Q97hi = modPI97[2,],
+                              Qsimlo=modPIsim[1,], Qsimhi=modPIsim[2,]
+    )
+  } #end loop over all models
+  return(fitpred)
+} #end function computing predictions</code></pre>
+<p>This function does the plotting:</p>
+<pre class="r"><code># defining a function so I don&#39;t need to re-type the same code
+plotfunction &lt;- function(fl,fitpred,fitdat)
+{
+  #list for storing all plots
+  plotlist = vector(mode = &quot;list&quot;, length = length(fl))
+
+  #small data adjustment for plotting
+  plotdat &lt;- fitdat %&gt;% data.frame()  %&gt;%
+    mutate(id = as.factor(id))  %&gt;%
+    mutate(dose = dose_cat)
+
+
+  #looping over all models, creating and storing a plot for each
+  for (n in 1:length(fl))
+  {
+    #adding titles to plots
+    title = fl[[n]]$model
+
+    plotlist[[n]] &lt;- ggplot(data = fitpred[[n]], aes(x = predtime, y = Estimate, group = id, color = dose )) +
+      geom_line(show.legend = F ) +
+      geom_ribbon(aes(x=predtime, ymin=Q89lo, ymax=Q89hi, fill = dose, color = NULL), alpha=0.3, show.legend = F) +
+      geom_ribbon(aes(x=predtime, ymin=Qsimlo, ymax=Qsimhi, fill = dose, color = NULL), alpha=0.1, show.legend = F) +
+      geom_point(data = plotdat, aes(x = time, y = outcome, group = id, color = dose), shape = 1, size = 2, stroke = 2) +
+      scale_y_continuous(limits = c(-30,50)) +
+      labs(y = &quot;Virus load&quot;,
+           x = &quot;days post infection&quot;) +
+      theme_minimal() +
+      ggtitle(title)
+  }
+  return(plotlist)
+} #end function making plots</code></pre>
+<p>These are the settings we use for all fits shown in this post:</p>
+<pre class="r"><code>######################################
+# Define general fit settings
+######################################
+#general settings for fitting
+#you might want to adjust based on your computer
+warmup = 4000
+iter = warmup + floor(warmup/2)
+max_td = 17 #tree depth
+adapt_delta = 0.999
+chains = 5
+cores  = chains
+seed = 1234</code></pre>
+<p>With these function definitions and specifications out of the way, we can get to some more model explorations.</p>
+</div>
+<div id="alternative-model-for-time-series-trajectory" class="section level1">
+<h1>Alternative model for time-series trajectory</h1>
+<p>In the main tutorial, I used the following two-parameter model to describe hypothetical virus-load time series for an acute virus infection.</p>
+<p><span class="math display">\[
+\mu_{i,t} = \log\left( t_i^{\alpha_i} e^{-\beta_i t_i} \right)  
+\]</span></p>
+<p>I mentioned there that this equation does in fact not capture real data too well. For our research project, we used a somewhat more flexible equation, given as</p>
+<p><span class="math display">\[
+\mu_{i,t} = \log\left( \frac{2 p_i}{e^{-g_i  (k_i - t_i)} + e^{d_i  (t_i - k_i)}}\right).
+\]</span></p>
+<p>Instead of two parameters, this model has 4. The parameters approximately represent virus peak, <span class="math inline">\(p_i\)</span>, initial growth rate, <span class="math inline">\(g_i\)</span>, decay rate, <span class="math inline">\(d_i\)</span>, and time of peak, <span class="math inline">\(k_i\)</span>. Colleagues <a href="https://bmcpublichealth.biomedcentral.com/articles/10.1186/1471-2458-11-S1-S10">showed previously</a> that this can fit virus load data for acute infections fairly well. The original use was for influenza, we found that it also worked reasonably well for our norovirus data, and thus used it. For the tutorial, I decided to stick to the simpler 2-parameter model. But everything I discussed there applies to this alternative model. For all 4 parameters, we can define individual-level and population level parameters, make them dose-dependent, etc. The main models for the 4 parameters are:</p>
+<p><span class="math display">\[
+\begin{aligned}
+p_{i} &amp; =  p_{0,i} + p_1 x_i  \\
+g_{i} &amp; =  g_{0,i} + g_1 x_i \\
+d_{i} &amp; =  d_{0,i} + d_1 x_i \\
+k_{i} &amp; =  k_{0,i} + k_1 x_i \\
+\end{aligned}
+\]</span></p>
+<p>In this notation, <span class="math inline">\(x_i\)</span> is the dose, transformed and scaled as needed.</p>
+<p>The same ideas about model specification, exponentiating to avoid negative values, and all of that still applies. You now need to specify priors for the parameters in each of the four equations above, instead of the 2 equations we had previously. It’s conceptionally the same, just a bit more typing and coding.
+Since there isn’t anything fundamentally new to show or learn, I’m not implementing the code. I’m confident once you walked through the prior posts in the tutorial, you can copy &amp; paste your way to working code for this bigger model. So if you feel like it, go ahead and implement the above model, both to simulate data and then to fit it.</p>
+<p>The model you use to simulate data does not have to be the same you use to fit it. You could for instance try to simulate data with the 2-parameter model and fit with the 4-parameter one, or the reverse. I haven’t tried it, but I expect that using the 2-parameter model to simulate data and the 4-parameter model to fit should work ok (since the 4 parameter model is flexible enough) but the reverse is likely not working too well. In either case, the fits are likely worse than if you use the same model to simulate the data and fit it. That’s not surprising.</p>
+<p>It illustrates the point that choosing the right main function (likelihood and deterministic part), is at least as important - probably more so - than setting priors. Most non-Bayesians get hung up about priors, but the dirty (somewhat)-secret is that the overall model specification - which needs to be done for both frequentist and Bayesian fitting - often has a much more pronounced impact, and choosing the model structure is always based on expertise (or convention, though that’s a bad reason), and there are no real rules.</p>
+</div>
+<div id="fitting-an-alternative-data-set" class="section level1">
+<h1>Fitting an alternative data set</h1>
+<p>For the main tutorial, I used one of the simulated data sets (as generated by model 3) for fitting purposes, since it had the most realistic structure. But we can of course try to fit the other data sets as well. Here, I’m doing a quick exploration using data set 2. That was the one generated by model 2, which did not have any individual-level variability. Recall that model 2 did not run well at all, while model 2a (basically the same model, just better specified) worked ok, though the fit was not great. Let’s see how model 2a does when fitting to a data that has the right overall structure. We’ll compare it to model 4.</p>
 <p>Here are the 2 models we want to fit:</p>
 <pre class="r"><code>#full-pooling model, population-level parameters only
 m2a &lt;- alist(
@@ -203,178 +341,45 @@ fl &lt;- readRDS(filepath)
 fitdat &lt;- fl[[1]]$fit@data</code></pre>
 <pre class="r"><code>#Model 2a
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
-<pre><code>##         mean     sd   5.5%  94.5% n_eff Rhat4
-## a0     3.003 0.0030  2.999  3.008   360     1
-## b0     0.999 0.0028  0.995  1.004   396     1
-## a1     0.097 0.0014  0.095  0.099   527     1
-## b1    -0.102 0.0013 -0.105 -0.100   683     1
-## sigma  1.028 0.0471  0.957  1.104   224     1</code></pre>
+<pre><code>##        mean     sd   5.5%  94.5% n_eff Rhat4
+## a0     3.00 0.0030  2.994  3.003  4272     1
+## b0     1.00 0.0027  0.995  1.004  4540     1
+## a1     0.10 0.0014  0.098  0.102  5268     1
+## b1    -0.10 0.0012 -0.102 -0.098  5907     1
+## sigma  0.99 0.0441  0.924  1.065  5020     1</code></pre>
 <pre class="r"><code>#Model 4
 a0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;a0&quot;)$mean)
 b0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[2]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##            mean     sd     5.5%   94.5% n_eff Rhat4
-## mu_a     3.0045 0.0028  3.00001  3.0089    40   1.1
-## mu_b     1.0001 0.0025  0.99603  1.0040    40   1.1
-## sigma_a  0.0019 0.0013  0.00026  0.0045    14   1.4
-## sigma_b  0.0017 0.0011  0.00022  0.0038    17   1.3
-## a1       0.0968 0.0015  0.09433  0.0992   310   1.0
-## b1      -0.1023 0.0013 -0.10461 -0.1003   464   1.0
-## sigma    1.0257 0.0464  0.95501  1.1003    71   1.1</code></pre>
+## mu_a     2.9997 0.0030  2.99472  3.0044   378     1
+## mu_b     1.0003 0.0027  0.99605  1.0045   395     1
+## sigma_a  0.0016 0.0013  0.00019  0.0040   205     1
+## sigma_b  0.0021 0.0014  0.00033  0.0048   228     1
+## a1       0.0999 0.0014  0.09757  0.1022  1669     1
+## b1      -0.1001 0.0013 -0.10217 -0.0981  3191     1
+## sigma    0.9861 0.0434  0.91872  1.0562  3874     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 3.004518 1.000069</code></pre>
+<pre><code>## [1] 2.999663 1.000287</code></pre>
 <p>The estimates for the parameters are fairly similar.</p>
 <p>We can compare models:</p>
 <pre class="r"><code>comp &lt;- compare(fl[[1]]$fit,fl[[2]]$fit)
 print(comp)</code></pre>
 <pre><code>##                 WAIC       SE    dWAIC      dSE     pWAIC    weight
-## fl[[1]]$fit 770.5421 22.29328 0.000000       NA  5.468887 0.8222881
-## fl[[2]]$fit 773.6060 22.40689 3.063854 1.924261 10.038776 0.1777119</code></pre>
+## fl[[1]]$fit 749.7644 22.95419 0.000000       NA  4.934354 0.7842277
+## fl[[2]]$fit 752.3453 23.11326 2.580951 2.081672 10.448133 0.2157723</code></pre>
 <p>Now, with a data structure that does not contain individual level variation, model 2a which does not contain it works ok.</p>
-<p>Let’s look at plots to further see if/how the models differ. Since we do this part multiple times, I defined two functions.
-This first function computes the predictions:</p>
-<pre class="r"><code># defining a function so I don&#39;t need to re-type the same code
-predfunction &lt;- function(fl,fitdat)
-{
-
-  #this will contain all the predictions from the different models
-  fitpred = vector(mode = &quot;list&quot;, length = length(fl))
-
-  # we are looping over each fitted model
-  for (n in 1:length(fl))
-  {
-    #get current model
-    nowmodel = fl[[n]]$fit
-
-    #make new data for which we want predictions
-    #specifically, more time points so the curves are smoother
-    timevec = seq(from = 0.1, to = max(fitdat$time), length=100)
-    Ntot = max(fitdat$id)
-    #new data used for predictions
-    #make variables for all versions of dose we use
-    preddat = data.frame( id = sort(rep(seq(1,Ntot),length(timevec))),
-                          time = rep(timevec,Ntot),
-                          dose = 0,
-                          dose_adj = 0,
-                          dose_adj2 = 0,
-                          dose_cat = 0,
-                          dose_cat2 = 0
-    )
-    #add right dose information for each individual
-    for (k in 1:Ntot)
-    {
-      #get actual dose for a given individual
-      #assign that dose
-      #need the if statements because not every data set has each dose
-      if (&quot;dose&quot; %in% names(fitdat)) {
-        nowdose = unique(fitdat$dose[fitdat$id == k])
-        preddat[(preddat$id == k),&quot;dose&quot;] = nowdose
-      }
-      if (&quot;dose_adj&quot; %in% names(fitdat)) {
-        nowdose_adj = unique(fitdat$dose_adj[fitdat$id == k])
-        preddat[(preddat$id == k),&quot;dose_adj&quot;] = nowdose_adj
-      }
-      if (&quot;dose_adj2&quot; %in% names(fitdat)) {
-        nowdose_adj2 = unique(fitdat$dose_adj2[fitdat$id == k])
-        preddat[(preddat$id == k),&quot;dose_adj2&quot;] = nowdose_adj2
-      }
-      if (&quot;dose_cat&quot; %in% names(fitdat)) {
-        nowdose_cat = unique(fitdat$dose_cat[fitdat$id == k])
-        preddat[(preddat$id == k),&quot;dose_cat&quot;] = nowdose_cat
-      }
-      if (&quot;dose_cat2&quot; %in% names(fitdat)) {
-        nowdose_cat2 = unique(fitdat$dose_cat2[fitdat$id == k])
-        preddat[(preddat$id == k),&quot;dose_cat2&quot;] = nowdose_cat2
-      }
-    }
-
-    # pull out posterior samples for the parameters
-    post &lt;- extract.samples(nowmodel)
-
-    # estimate and CI for parameter variation
-    # this uses the link function from rethinking
-    # we ask for predictions for the new data generated above
-    linkmod &lt;- rethinking::link(nowmodel, data = preddat)
-
-    #computing mean and various credibility intervals
-    #these choices are inspired by the Statistical Rethinking book
-    #and purposefully do not include 95%
-    #to minimize thoughts of statistical significance
-    #significance is not applicable here since we are doing bayesian fitting
-    modmean &lt;- apply( linkmod$mu , 2 , mean )
-    modPI79 &lt;- apply( linkmod$mu , 2 , PI , prob=0.79 )
-    modPI89 &lt;- apply( linkmod$mu , 2 , PI , prob=0.89 )
-    modPI97 &lt;- apply( linkmod$mu , 2 , PI , prob=0.97 )
-
-    # estimate and CI for prediction intervals
-    # this uses the sim function from rethinking
-    # the predictions factor in additional uncertainty around the mean (mu)
-    # as indicated by sigma
-    simmod &lt;- rethinking::sim(nowmodel, data = preddat)
-
-    # mean and credible intervals for outcome predictions
-    # modmeansim should agree with above modmean values
-    modmeansim &lt;- apply( simmod , 2 , mean )
-    modPIsim &lt;- apply( simmod , 2 , PI , prob=0.89 )
-
-    #place all predictions into a data frame
-    #and store in a list for each model
-    fitpred[[n]] = data.frame(id = as.factor(preddat$id),
-                              dose = as.factor(preddat$dose_cat),
-                              predtime = preddat$time,
-                              Estimate = modmean,
-                              Q79lo = modPI79[1,], Q79hi = modPI79[2,],
-                              Q89lo = modPI89[1,], Q89hi = modPI89[2,],
-                              Q97lo = modPI97[1,], Q97hi = modPI97[2,],
-                              Qsimlo=modPIsim[1,], Qsimhi=modPIsim[2,]
-    )
-  } #end loop over all models
-  return(fitpred)
-} #end function computing predictions</code></pre>
-<p>The second function makes the plots:</p>
-<pre class="r"><code># defining a function so I don&#39;t need to re-type the same code
-plotfunction &lt;- function(fl,fitpred,fitdat)
-{
-  #list for storing all plots
-  plotlist = vector(mode = &quot;list&quot;, length = length(fl))
-
-  #small data adjustment for plotting
-  plotdat &lt;- fitdat %&gt;% data.frame()  %&gt;%
-    mutate(id = as.factor(id))  %&gt;%
-    mutate(dose = dose_cat)
-
-
-  #looping over all models, creating and storing a plot for each
-  for (n in 1:length(fl))
-  {
-    #adding titles to plots
-    title = fl[[n]]$model
-
-    plotlist[[n]] &lt;- ggplot(data = fitpred[[n]], aes(x = predtime, y = Estimate, group = id, color = dose ) ) +
-      geom_line() +
-      geom_ribbon(aes(x=predtime, ymin=Q89lo, ymax=Q89hi, fill = dose, color = NULL), alpha=0.3, show.legend = F) +
-      geom_ribbon(aes(x=predtime, ymin=Qsimlo, ymax=Qsimhi, fill = dose, color = NULL), alpha=0.1, show.legend = F) +
-      geom_point(data = plotdat, aes(x = time, y = outcome, group = id, color = dose), shape = 1, size = 2, stroke = 2) +
-      scale_y_continuous(limits = c(-30,50)) +
-      labs(y = &quot;Virus load&quot;,
-           x = &quot;days post infection&quot;) +
-      theme_minimal() +
-      ggtitle(title)
-  }
-  return(plotlist)
-} #end function making plots</code></pre>
-<p>Now let’s apply these functions to the models we just ran:</p>
+<p>Let’s look at plots to further see if/how the models differ. First we need to make predictions, then we can plot.</p>
 <pre class="r"><code>fitpred &lt;- predfunction(fl,fitdat)</code></pre>
 <pre class="r"><code>plotlist &lt;- plotfunction(fl,fitpred,fitdat)
 plot(plotlist[[1]])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/plot_dat2-1.png" width="672" /></p>
 <pre class="r"><code>plot(plotlist[[2]])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/plot_dat2-2.png" width="672" /></p>
-<pre class="r"><code>#save a plot so we can use it in the blog post
-ggsave(file = paste0(&quot;featured.png&quot;), plotlist[[2]], dpi = 300, units = &quot;in&quot;, width = 6, height = 6)</code></pre>
-<p>For this data set, which as little individual-level variation, the simpler model and the more complex one perform more or less equally well.
-Depending on the amount of noise (<span class="math inline">\(\sigma\)</span> in the model), at some point we can expect the simple model to not capture things too well anymore. Overall, model choice should be driven by the underlying scientific assumptions. If one expects no or almost no variation between the individual units (e.g. people in our case, but it could be anything else), then a simple model that ignores individual-level variation might be ok. In most cases, a model that allows for such variation seems best. Especially since the adaptive pooling model allows the model to learn the amount of variation that best describes the data, thus it seems - apart from a bit more complex model setup and a longer run time - there is essentially no downside to this type of model.</p>
+<p>For this data set, with little individual-level variation, the simpler model and the more complex one perform more or less equally well.
+Depending on the amount of noise (<span class="math inline">\(\sigma\)</span> in the model), at some point we can expect the simple model to not capture things too well anymore.</p>
+<p>Generally speaking, model choice should be driven by the underlying scientific assumptions. If one expects no or almost no variation between the individual units (e.g. people in our case, but it could be anything else), then a simple model that ignores individual-level variation might be ok. In most cases, a model that allows for such variation is likely more appropriate. Especially since the adaptive pooling model allows the model to learn the amount of variation that best describes the data, thus it seems - apart from a bit more complex model setup and a longer run time - there is essentially no downside to this type of model.</p>
 </div>
 <div id="fitting-a-larger-data-set" class="section level1">
 <h1>Fitting a larger data set</h1>
@@ -430,16 +435,25 @@ b0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 480 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##           mean     sd   5.5%  94.5% n_eff Rhat4
-## mu_a     3.002 0.0068  2.991  3.013  1322   1.0
-## mu_b     0.997 0.0066  0.987  1.008  1468   1.0
-## sigma_a  0.104 0.0047  0.097  0.111  2027   1.0
-## sigma_b  0.097 0.0044  0.090  0.104  2045   1.0
-## a1       0.099 0.0039  0.092  0.105    46   1.1
-## b1      -0.099 0.0035 -0.104 -0.093    79   1.0
-## sigma    1.008 0.0161  0.981  1.034  1210   1.0</code></pre>
+## mu_a     3.004 0.0067  2.993  3.015 16110     1
+## mu_b     0.999 0.0063  0.989  1.009 19929     1
+## sigma_a  0.103 0.0049  0.095  0.111 19606     1
+## sigma_b  0.097 0.0046  0.090  0.104 18742     1
+## a1       0.098 0.0037  0.092  0.104   538     1
+## b1      -0.100 0.0033 -0.105 -0.094   545     1
+## sigma    1.015 0.0152  0.991  1.040 12241     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 3.0021353 0.9973383</code></pre>
-<p>Note the message about the hidden parameters, it’s 10 times as many as previously, since we have <span class="math inline">\(N\)</span> increased by a factor of 10. If we compare these estimates to those for model 4 in <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/">part 2</a>, we notice that the credible intervals shrank, i.e. the precision increased. This is expected for larger sample size. So, reassuringly, larger sample size behaves as expected, helping the model to make more precise estimates. This will likely also lead to narrower uncertainty intervals for the predictions, but I’m not making those plots here. You can explore those by just copying and pasting the prediction and plot generation code chunks from the previous section.</p>
+<pre><code>## [1] 3.003990 0.999272</code></pre>
+<p>Note the message about the hidden parameters, it’s 10 times as many as previously, since we have <span class="math inline">\(N\)</span> increased by a factor of 10. If we compare these estimates to those for model 4 in <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/">part 2</a>, we notice that the credible intervals shrank, i.e. the precision increased. This is expected for larger sample size. So, reassuringly, larger sample size behaves as expected, helping the model to make more precise estimates. This should also lead to narrower uncertainty intervals for the predictions. Let’s check:</p>
+<pre class="r"><code>fitpred &lt;- predfunction(fl,fitdat)</code></pre>
+<pre class="r"><code>plotlist &lt;- plotfunction(fl,fitpred,fitdat)
+#update plot
+p1 &lt;- plotlist[[1]] + scale_y_continuous(limits = c(-30,70))
+plot(p1)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/plot_big-1.png" width="672" /></p>
+<pre class="r"><code>#save plot so we can use it in the blog post
+ggsave(file = paste0(&quot;featured.png&quot;), p1, dpi = 300, units = &quot;in&quot;, width = 6, height = 6)</code></pre>
+<p>Looks messy, but overall ok.</p>
 </div>
 <div id="alternative-to-enforcing-positivity-of-parameters" class="section level1">
 <h1>Alternative to enforcing positivity of parameters</h1>
@@ -527,7 +541,7 @@ simdat &lt;- readRDS(&quot;simdat.Rds&quot;)
 fitdat=list(id=simdat[[3]]$id,
             outcome = simdat[[3]]$outcome,
             dose = simdat[[3]]$dose,
-            dose_adj2 = simdat[[3]]$dose_adj/max(simdat[[3]]$dose),
+            dose_adj2 = simdat[[3]]$dose/max(simdat[[3]]$dose),
             dose_cat = simdat[[3]]$dose_cat,
             time = simdat[[3]]$time
             )
@@ -563,46 +577,48 @@ for (n in 1:length(modellist))
 # saving the results so we can use them later
 filepath = fs::path(&quot;D:&quot;,&quot;Dropbox&quot;,&quot;datafiles&quot;,&quot;longitudinalbayes&quot;,&quot;ulamfits_altpos&quot;, ext=&quot;Rds&quot;)
 saveRDS(fl,filepath)</code></pre>
-<p>Let’s see what we get with this changed model.
-For the new model 5, I’m doing the math so we can compare the new with the old parameters.</p>
+<p>Let’s see what we get with this changed model.</p>
 <pre class="r"><code>#loading previously saved fits.
 filepath = fs::path(&quot;D:&quot;,&quot;Dropbox&quot;,&quot;datafiles&quot;,&quot;longitudinalbayes&quot;,&quot;ulamfits_altpos&quot;, ext=&quot;Rds&quot;)
 fl &lt;- readRDS(filepath)
 fitdat &lt;- fl[[1]]$fit@data</code></pre>
+<p>For model 3, we get the same estimates for the dose parameters. That should be the case, since we are still estimating the impact of changes in (log) dose, as before.
+The intercept parameters, <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> are now different from previous model fits and the original data generating model. That is also expected, since we generated the data with the model that subtracted the medium dose, but now fit it without that part.</p>
 <pre class="r"><code>#Model 3
 a0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;a0&quot;)$mean)
 b0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
-<pre><code>##        mean    sd   5.5% 94.5% n_eff Rhat4
-## a1    0.193 0.035 0.1322  0.24    55   1.1
-## b1    0.079 0.043 0.0009  0.14    46   1.1
-## sigma 0.975 0.048 0.9080  1.06   297   1.0</code></pre>
+<pre><code>##       mean    sd   5.5% 94.5% n_eff Rhat4
+## a1    0.19 0.041 0.1291  0.26   579     1
+## b1    0.07 0.037 0.0089  0.13   602     1
+## sigma 1.06 0.050 0.9835  1.14  2447     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.0756647 0.5883302</code></pre>
+<pre><code>## [1] 2.0707322 0.6309118</code></pre>
+<p>For the new model 5, I’m doing the math so we can compare the new with the old parameters.</p>
 <pre class="r"><code>#Model 5
 print(precis(fl[[2]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##       mean    sd 5.5% 94.5% n_eff Rhat4
-## a2    1.08 0.456 0.36   1.8    79   1.1
-## b2    0.67 0.409 0.15   1.4    96   1.1
-## sigma 0.97 0.048 0.90   1.1   996   1.0</code></pre>
+## a2    3.62 0.849 2.48   5.2   312     1
+## b2    0.83 0.229 0.51   1.2   286     1
+## sigma 1.06 0.053 0.98   1.1  1309     1</code></pre>
 <pre class="r"><code>a0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;a0&quot;)$mean)
 b0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 3.0401008 0.9805156</code></pre>
+<pre><code>## [1] 1.168793 1.129761</code></pre>
 <pre class="r"><code># computing values that correspond to a1 and b1
-a1est = (precis(fl[[2]]$fit,pars=&quot;a2&quot;)[1,]-1)*a0mean*(max(fitdat$dose)-median(fitdat$dose))
-b1est = (precis(fl[[2]]$fit,pars=&quot;b2&quot;)[1,]-1)*a0mean*(max(fitdat$dose)-median(fitdat$dose))
+a1est = (precis(fl[[2]]$fit,pars=&quot;a2&quot;)[1,]-1)*a0mean/max(fitdat$dose)
+b1est = (precis(fl[[2]]$fit,pars=&quot;b2&quot;)[1,]-1)*b0mean/max(fitdat$dose)
 print(c(a1est,b1est))</code></pre>
-<pre><code>## [1]  0.5687461 -2.3367847</code></pre>
+<pre><code>## [1]  0.44368013 -0.02844121</code></pre>
 <p>We find overall similar estimates, but the new model 5 has fairly wide credible intervals.</p>
 <p>We can also compare the two models.</p>
 <pre class="r"><code>compare(fl[[1]]$fit,fl[[2]]$fit)</code></pre>
-<pre><code>##                 WAIC       SE     dWAIC      dSE    pWAIC    weight
-## fl[[1]]$fit 787.2763 23.08030 0.0000000       NA 44.24179 0.5188935
-## fl[[2]]$fit 787.4275 23.10472 0.1512202 1.100507 44.32220 0.4811065</code></pre>
-<p>The fit quality is more or less the same. Note that model 5 took almost twice as long to run compared to model 3.</p>
+<pre><code>##                 WAIC       SE     dWAIC       dSE    pWAIC    weight
+## fl[[1]]$fit 832.0189 23.35205 0.0000000        NA 43.31692 0.5245033
+## fl[[2]]$fit 832.2151 23.41504 0.1961835 0.4549643 43.50567 0.4754967</code></pre>
+<p>The fit quality is more or less the same. Note that model 3 ran faster than model 5, 14 versus 25 minutes.</p>
 <p>Finally, let’s do the plots to check that they look more or less the same.</p>
 <pre class="r"><code>fitpred &lt;- predfunction(fl,fitdat)</code></pre>
 <p>Now let’s make and look at the plots.</p>
@@ -611,7 +627,7 @@ plot(plotlist[[1]])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/plot_altpos-1.png" width="672" /></p>
 <pre class="r"><code>plot(plotlist[[2]])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/plot_altpos-2.png" width="672" /></p>
-<p>We do find that the plots for the 2 models are pretty much the same. That’s good, since those are the same models, just written in different forms. In this case, the original way of writing is better since it runs faster.</p>
+<p>We do find that the plots for the 2 models are pretty much the same. That’s good, since those are essentially the same models, just written in different forms. In this case, the original way of writing seems better since it runs faster.</p>
 </div>
 <div id="treating-dose-as-an-unordered-categorical-variable" class="section level1">
 <h1>Treating dose as an <strong>unordered</strong> categorical variable</h1>
@@ -713,130 +729,130 @@ fl &lt;- readRDS(filepath)
 fitdat &lt;- fl[[1]]$fit@data</code></pre>
 <pre class="r"><code>#Model 4
 print(precis(fl[[1]]$fit,depth=2),digits = 2)</code></pre>
-<pre><code>##           mean     sd   5.5%  94.5% n_eff Rhat4
-## a0[1]    3.185 0.0246  3.145  3.224   300     1
-## a0[2]    3.114 0.0258  3.074  3.156   339     1
-## a0[3]    2.955 0.0274  2.911  2.997   355     1
-## a0[4]    2.910 0.0279  2.866  2.953   354     1
-## a0[5]    2.897 0.0287  2.850  2.940   367     1
-## a0[6]    3.002 0.0279  2.957  3.046   341     1
-## a0[7]    2.974 0.0271  2.932  3.017   367     1
-## a0[8]    2.952 0.0139  2.930  2.974   730     1
-## a0[9]    2.898 0.0151  2.873  2.922   920     1
-## a0[10]   2.989 0.0139  2.968  3.010   849     1
-## a0[11]   2.901 0.0144  2.879  2.924   792     1
-## a0[12]   2.841 0.0159  2.816  2.866   802     1
-## a0[13]   2.948 0.0134  2.926  2.969   851     1
-## a0[14]   3.093 0.0122  3.074  3.112   926     1
-## a0[15]   2.950 0.0142  2.928  2.972   688     1
-## a0[16]   3.065 0.0242  3.025  3.103   303     1
-## a0[17]   2.885 0.0250  2.844  2.926   303     1
-## a0[18]   3.010 0.0247  2.971  3.051   291     1
-## a0[19]   3.082 0.0241  3.044  3.122   312     1
-## a0[20]   3.073 0.0243  3.034  3.113   288     1
-## a0[21]   3.027 0.0240  2.990  3.066   293     1
-## a0[22]   2.966 0.0241  2.928  3.006   297     1
-## a0[23]   2.963 0.0244  2.925  3.004   295     1
-## a0[24]   2.927 0.0249  2.887  2.965   310     1
-## b0[1]    0.999 0.0291  0.955  1.045   146     1
-## b0[2]    0.886 0.0291  0.841  0.933   143     1
-## b0[3]    0.947 0.0290  0.901  0.991   147     1
-## b0[4]    0.986 0.0294  0.941  1.034   144     1
-## b0[5]    1.175 0.0288  1.131  1.221   139     1
-## b0[6]    0.930 0.0295  0.885  0.977   142     1
-## b0[7]    1.036 0.0293  0.992  1.082   143     1
-## b0[8]    1.004 0.0122  0.985  1.024   763     1
-## b0[9]    0.905 0.0136  0.883  0.927   963     1
-## b0[10]   0.985 0.0132  0.964  1.006   710     1
-## b0[11]   1.125 0.0108  1.108  1.143   777     1
-## b0[12]   1.045 0.0121  1.025  1.063   841     1
-## b0[13]   0.990 0.0118  0.971  1.010   892     1
-## b0[14]   0.953 0.0131  0.932  0.973   947     1
-## b0[15]   0.800 0.0152  0.776  0.824   734     1
-## b0[16]   1.094 0.0309  1.043  1.141   150     1
-## b0[17]   0.885 0.0320  0.835  0.937   175     1
-## b0[18]   1.068 0.0315  1.018  1.119   175     1
-## b0[19]   1.207 0.0298  1.160  1.254   158     1
-## b0[20]   0.885 0.0328  0.833  0.937   184     1
-## b0[21]   1.081 0.0317  1.030  1.134   166     1
-## b0[22]   0.981 0.0314  0.930  1.033   175     1
-## b0[23]   0.880 0.0323  0.827  0.931   179     1
-## b0[24]   0.863 0.0331  0.807  0.914   185     1
-## mu_a     2.983 0.0192  2.954  3.015  1064     1
-## mu_b     0.989 0.0233  0.952  1.027   986     1
-## sigma_a  0.091 0.0145  0.071  0.117   742     1
-## sigma_b  0.112 0.0189  0.086  0.145   924     1
-## a1       0.091 0.0096  0.076  0.106   251     1
-## b1      -0.101 0.0120 -0.119 -0.082   131     1
-## sigma    0.973 0.0466  0.902  1.051  1001     1</code></pre>
+<pre><code>##           mean    sd   5.5%  94.5% n_eff Rhat4
+## a0[1]    3.176 0.028  3.131  3.221  1447     1
+## a0[2]    3.138 0.028  3.094  3.182  1475     1
+## a0[3]    2.943 0.030  2.895  2.989  1642     1
+## a0[4]    2.877 0.030  2.830  2.925  1680     1
+## a0[5]    2.920 0.030  2.871  2.967  1692     1
+## a0[6]    3.011 0.029  2.964  3.057  1591     1
+## a0[7]    2.961 0.029  2.914  3.007  1643     1
+## a0[8]    2.984 0.015  2.960  3.007  6934     1
+## a0[9]    2.911 0.016  2.885  2.936  6642     1
+## a0[10]   2.985 0.015  2.961  3.008  6371     1
+## a0[11]   2.939 0.015  2.914  2.964  6679     1
+## a0[12]   2.845 0.017  2.818  2.873  6902     1
+## a0[13]   2.972 0.015  2.947  2.996  6528     1
+## a0[14]   3.089 0.014  3.067  3.111  6883     1
+## a0[15]   2.951 0.015  2.926  2.975  7503     1
+## a0[16]   3.084 0.026  3.043  3.125  1246     1
+## a0[17]   2.865 0.027  2.822  2.908  1339     1
+## a0[18]   3.040 0.026  2.999  3.083  1287     1
+## a0[19]   3.073 0.026  3.031  3.115  1295     1
+## a0[20]   3.047 0.026  3.006  3.089  1281     1
+## a0[21]   3.023 0.026  2.981  3.065  1283     1
+## a0[22]   2.976 0.027  2.934  3.018  1301     1
+## a0[23]   2.967 0.027  2.924  3.009  1329     1
+## a0[24]   2.916 0.027  2.873  2.959  1329     1
+## b0[1]    0.995 0.033  0.941  1.046  1325     1
+## b0[2]    0.898 0.033  0.844  0.951  1355     1
+## b0[3]    0.943 0.033  0.889  0.995  1286     1
+## b0[4]    0.963 0.033  0.910  1.013  1318     1
+## b0[5]    1.180 0.032  1.128  1.232  1278     1
+## b0[6]    0.931 0.033  0.877  0.982  1328     1
+## b0[7]    1.020 0.033  0.967  1.071  1329     1
+## b0[8]    1.015 0.013  0.994  1.036  6900     1
+## b0[9]    0.909 0.015  0.886  0.933  6609     1
+## b0[10]   0.984 0.014  0.962  1.006  6305     1
+## b0[11]   1.151 0.012  1.132  1.169  6712     1
+## b0[12]   1.049 0.013  1.028  1.069  6897     1
+## b0[13]   1.010 0.014  0.988  1.031  6473     1
+## b0[14]   0.951 0.014  0.928  0.974  6826     1
+## b0[15]   0.794 0.017  0.767  0.820  7374     1
+## b0[16]   1.109 0.035  1.056  1.165  1450     1
+## b0[17]   0.846 0.036  0.788  0.903  1544     1
+## b0[18]   1.106 0.035  1.051  1.162  1459     1
+## b0[19]   1.189 0.034  1.136  1.245  1359     1
+## b0[20]   0.848 0.037  0.789  0.906  1604     1
+## b0[21]   1.057 0.035  1.002  1.113  1445     1
+## b0[22]   0.996 0.036  0.939  1.053  1496     1
+## b0[23]   0.878 0.036  0.821  0.937  1619     1
+## b0[24]   0.854 0.036  0.796  0.914  1540     1
+## mu_a     2.987 0.019  2.956  3.018 10535     1
+## mu_b     0.986 0.024  0.948  1.025 10542     1
+## sigma_a  0.093 0.015  0.072  0.120  8366     1
+## sigma_b  0.119 0.019  0.093  0.153  8557     1
+## a1       0.086 0.010  0.070  0.103  1076     1
+## b1      -0.105 0.014 -0.128 -0.084  1185     1
+## sigma    1.062 0.053  0.982  1.149 10064     1</code></pre>
 <pre class="r"><code>#Model 6
 print(precis(fl[[2]]$fit,depth=2),digits = 2)</code></pre>
 <pre><code>##           mean    sd   5.5% 94.5% n_eff Rhat4
-## a0[1]    2.532 0.601  1.516  3.48    58   1.1
-## a0[2]    2.461 0.600  1.453  3.40    58   1.1
-## a0[3]    2.303 0.601  1.278  3.24    58   1.1
-## a0[4]    2.258 0.601  1.233  3.20    58   1.1
-## a0[5]    2.246 0.601  1.220  3.18    58   1.1
-## a0[6]    2.349 0.600  1.338  3.28    58   1.1
-## a0[7]    2.323 0.600  1.309  3.26    58   1.1
-## a0[8]    2.356 0.604  1.334  3.28    58   1.1
-## a0[9]    2.303 0.605  1.286  3.22    58   1.1
-## a0[10]   2.394 0.605  1.349  3.32    58   1.1
-## a0[11]   2.307 0.604  1.289  3.24    58   1.1
-## a0[12]   2.246 0.605  1.239  3.15    58   1.1
-## a0[13]   2.354 0.605  1.334  3.27    58   1.1
-## a0[14]   2.498 0.605  1.465  3.44    58   1.1
-## a0[15]   2.355 0.604  1.317  3.30    58   1.1
-## a0[16]   2.419 0.603  1.417  3.34    59   1.1
-## a0[17]   2.239 0.603  1.245  3.16    59   1.1
-## a0[18]   2.363 0.603  1.367  3.28    59   1.1
-## a0[19]   2.436 0.603  1.434  3.36    59   1.1
-## a0[20]   2.427 0.603  1.430  3.36    59   1.1
-## a0[21]   2.381 0.603  1.368  3.30    59   1.1
-## a0[22]   2.321 0.603  1.314  3.25    59   1.1
-## a0[23]   2.317 0.603  1.311  3.24    59   1.1
-## a0[24]   2.281 0.603  1.274  3.20    59   1.1
-## b0[1]    1.168 0.542  0.319  2.06    87   1.0
-## b0[2]    1.055 0.543  0.212  1.95    87   1.0
-## b0[3]    1.116 0.542  0.275  2.01    87   1.0
-## b0[4]    1.157 0.542  0.309  2.06    88   1.0
-## b0[5]    1.345 0.542  0.500  2.25    88   1.0
-## b0[6]    1.100 0.542  0.245  1.99    87   1.0
-## b0[7]    1.206 0.542  0.356  2.10    87   1.0
-## b0[8]    1.196 0.538  0.377  2.08    87   1.0
-## b0[9]    1.098 0.539  0.266  1.98    87   1.0
-## b0[10]   1.178 0.537  0.351  2.06    87   1.0
-## b0[11]   1.319 0.538  0.497  2.20    87   1.0
-## b0[12]   1.238 0.538  0.417  2.12    87   1.0
-## b0[13]   1.183 0.538  0.361  2.07    87   1.0
-## b0[14]   1.145 0.537  0.327  2.02    87   1.0
-## b0[15]   0.993 0.539  0.168  1.87    87   1.0
-## b0[16]   1.267 0.536  0.442  2.15    87   1.0
-## b0[17]   1.058 0.537  0.236  1.95    88   1.0
-## b0[18]   1.241 0.537  0.421  2.13    87   1.0
-## b0[19]   1.381 0.536  0.561  2.28    87   1.0
-## b0[20]   1.058 0.536  0.249  1.95    87   1.0
-## b0[21]   1.255 0.536  0.426  2.14    87   1.0
-## b0[22]   1.156 0.536  0.336  2.05    87   1.0
-## b0[23]   1.055 0.537  0.228  1.95    87   1.0
-## b0[24]   1.036 0.537  0.215  1.93    87   1.0
-## mu_a     2.353 0.602  1.322  3.29    58   1.1
-## mu_b     1.167 0.539  0.335  2.05    87   1.0
-## sigma_a  0.089 0.014  0.071  0.11   406   1.0
-## sigma_b  0.117 0.022  0.089  0.16   262   1.0
-## a1[1]    0.444 0.601 -0.503  1.46    58   1.1
-## a1[2]    0.594 0.605 -0.329  1.62    58   1.1
-## a1[3]    0.855 0.603 -0.067  1.86    59   1.1
-## b1[1]    0.064 0.542 -0.837  0.91    87   1.0
-## b1[2]   -0.194 0.538 -1.078  0.62    87   1.0
-## b1[3]   -0.407 0.536 -1.296  0.41    87   1.0
-## sigma    0.976 0.048  0.905  1.06   214   1.0</code></pre>
+## a0[1]    2.677 0.513  1.877  3.50   619     1
+## a0[2]    2.640 0.513  1.843  3.46   619     1
+## a0[3]    2.444 0.513  1.644  3.27   617     1
+## a0[4]    2.379 0.513  1.577  3.21   619     1
+## a0[5]    2.422 0.513  1.625  3.25   619     1
+## a0[6]    2.513 0.513  1.714  3.34   619     1
+## a0[7]    2.463 0.513  1.661  3.29   619     1
+## a0[8]    2.529 0.513  1.724  3.35   622     1
+## a0[9]    2.456 0.513  1.655  3.28   623     1
+## a0[10]   2.530 0.513  1.730  3.35   621     1
+## a0[11]   2.484 0.513  1.684  3.30   622     1
+## a0[12]   2.390 0.513  1.589  3.21   623     1
+## a0[13]   2.517 0.513  1.719  3.34   622     1
+## a0[14]   2.635 0.513  1.833  3.45   622     1
+## a0[15]   2.496 0.513  1.693  3.32   622     1
+## a0[16]   2.589 0.513  1.792  3.41   620     1
+## a0[17]   2.371 0.513  1.576  3.19   621     1
+## a0[18]   2.546 0.513  1.747  3.37   620     1
+## a0[19]   2.579 0.513  1.786  3.40   620     1
+## a0[20]   2.553 0.513  1.752  3.37   620     1
+## a0[21]   2.529 0.513  1.732  3.35   620     1
+## a0[22]   2.481 0.513  1.681  3.30   621     1
+## a0[23]   2.472 0.513  1.675  3.29   620     1
+## a0[24]   2.422 0.513  1.625  3.24   621     1
+## b0[1]    1.070 0.509  0.247  1.90   706     1
+## b0[2]    0.974 0.509  0.150  1.81   706     1
+## b0[3]    1.018 0.509  0.193  1.85   706     1
+## b0[4]    1.038 0.509  0.216  1.87   706     1
+## b0[5]    1.255 0.509  0.435  2.09   706     1
+## b0[6]    1.006 0.509  0.183  1.84   706     1
+## b0[7]    1.095 0.509  0.273  1.93   707     1
+## b0[8]    1.097 0.508  0.269  1.94   714     1
+## b0[9]    0.992 0.509  0.164  1.83   714     1
+## b0[10]   1.067 0.508  0.234  1.90   714     1
+## b0[11]   1.233 0.508  0.405  2.07   714     1
+## b0[12]   1.131 0.509  0.302  1.97   714     1
+## b0[13]   1.092 0.509  0.268  1.93   714     1
+## b0[14]   1.033 0.509  0.207  1.87   714     1
+## b0[15]   0.876 0.509  0.045  1.72   714     1
+## b0[16]   1.186 0.510  0.362  2.03   706     1
+## b0[17]   0.923 0.510  0.098  1.77   708     1
+## b0[18]   1.183 0.510  0.360  2.03   706     1
+## b0[19]   1.267 0.510  0.439  2.11   707     1
+## b0[20]   0.925 0.510  0.096  1.76   707     1
+## b0[21]   1.134 0.510  0.309  1.98   707     1
+## b0[22]   1.073 0.510  0.247  1.91   707     1
+## b0[23]   0.955 0.510  0.128  1.80   706     1
+## b0[24]   0.931 0.510  0.107  1.77   708     1
+## mu_a     2.505 0.512  1.708  3.33   619     1
+## mu_b     1.064 0.508  0.242  1.90   708     1
+## sigma_a  0.093 0.016  0.071  0.12  2597     1
+## sigma_b  0.122 0.021  0.094  0.16  1910     1
+## a1[1]    0.300 0.513 -0.530  1.10   618     1
+## a1[2]    0.454 0.513 -0.368  1.25   622     1
+## a1[3]    0.693 0.513 -0.128  1.49   620     1
+## b1[1]    0.168 0.509 -0.665  0.99   706     1
+## b1[2]   -0.083 0.508 -0.924  0.74   714     1
+## b1[3]   -0.319 0.510 -1.160  0.51   706     1
+## sigma    1.062 0.051  0.983  1.15  2603     1</code></pre>
 <p>The <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> coefficients are the interesting ones. We now have a different estimate for each dose. The values for <span class="math inline">\(a_1\)</span> increase with dose and the values for <span class="math inline">\(b_1\)</span> decrease with dose. This is consistent with the linear/continuous model and the way we generated the data.</p>
 <p>We can compare this model to the continuous one in terms of WAIC</p>
 <pre class="r"><code>compare(fl[[1]]$fit,fl[[2]]$fit)</code></pre>
-<pre><code>##                 WAIC       SE    dWAIC      dSE    pWAIC    weight
-## fl[[1]]$fit 786.3129 23.17939 0.000000       NA 43.65694 0.8353099
-## fl[[2]]$fit 789.5603 23.34764 3.247474 1.433301 44.89948 0.1646901</code></pre>
+<pre><code>##                 WAIC       SE    dWAIC       dSE    pWAIC    weight
+## fl[[1]]$fit 831.8724 23.41356 0.000000        NA 42.91541 0.6446495
+## fl[[2]]$fit 833.0636 23.46125 1.191204 0.5173108 43.45759 0.3553505</code></pre>
 <p>Let’s compute predictions so we can plot.</p>
 <pre class="r"><code>fitpred &lt;- predfunction(fl,fitdat)</code></pre>
 <p>Now let’s make and look at the plots.</p>
