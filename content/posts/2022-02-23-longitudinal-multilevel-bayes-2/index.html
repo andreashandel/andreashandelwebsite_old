@@ -567,13 +567,21 @@ print(precis(fl[[6]]$fit,depth=1),digits = 2)</code></pre>
 <p>The numerics confirm that the two models lead to essentially the same results. The values for <code>n_eff</code> differ between models, though neither model is consistently larger. This suggests that each model formulation had advantages in sampling for some of the parameters.</p>
 <p>In terms of run times, there wasn’t much difference, with 5 minutes for model 4 versus 7 minutes for model 4a (much better than models 1-3).</p>
 <p>If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> are estimated fairly well. Estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are now also pretty good, and the credible intervals are less wide.</p>
-<p>Now let’s briefly run the <code>compare</code> function too and include model 3 as well:</p>
-<pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit)</code></pre>
+<p>Now let’s briefly run the <code>compare</code> function too and include model 3 as well. In addition to using WAIC for comparison, I’m also including PSIS. Read about it in the Statistical Rethinking book. One advantage of PSIS is that it gives warnings if the estimates might not be reliable. You see that this happens here.</p>
+<pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit, func = WAIC)</code></pre>
 <pre><code>##                 WAIC       SE     dWAIC       dSE    pWAIC    weight
 ## fl[[4]]$fit 785.7564 23.21761 0.0000000        NA 43.40855 0.4346582
 ## fl[[6]]$fit 786.4235 23.28410 0.6670811 0.3800124 43.75155 0.3113817
 ## fl[[3]]$fit 786.8312 23.14590 1.0747658 2.2075132 44.27149 0.2539601</code></pre>
-<p>We do find that model 4/4a performs a bit better. Note that model 4 has more actual parameters, but the effective parameters (which is described by <code>pWAIC</code>) is smaller.</p>
+<pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit, func = PSIS)</code></pre>
+<pre><code>## Some Pareto k values are high (&gt;0.5). Set pointwise=TRUE to inspect individual points.
+## Some Pareto k values are high (&gt;0.5). Set pointwise=TRUE to inspect individual points.
+## Some Pareto k values are high (&gt;0.5). Set pointwise=TRUE to inspect individual points.</code></pre>
+<pre><code>##                 PSIS       SE    dPSIS       dSE    pPSIS    weight
+## fl[[4]]$fit 793.8170 23.86923 0.000000        NA 47.43886 0.5289883
+## fl[[3]]$fit 795.4293 23.85856 1.612292 2.3819019 48.57055 0.2362334
+## fl[[6]]$fit 795.4417 24.11740 1.624649 0.7861994 48.26064 0.2347783</code></pre>
+<p>We do find that model 4/4a performs a bit better, but not by much. Note that model 4/4a has more actual parameters, but the effective parameters (which is described by <code>pWAIC</code>) is smaller. Though the difference is small and WAIC and PSIS don’t fully agree.</p>
 <p>Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely and efficiently and is the best of the models.</p>
 </div>
 <div id="model-5-1" class="section level2">

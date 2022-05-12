@@ -184,7 +184,8 @@ print(precis(fl[[6]]$fit,depth=1),digits = 2)
 
 
 ## ---- mod_4_4a_comparison --------
-compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit)
+compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit, func = WAIC)
+compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit, func = PSIS)
 
 
 

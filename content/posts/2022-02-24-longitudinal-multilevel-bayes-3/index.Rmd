@@ -183,7 +183,9 @@ Here is the default trace plot. Note that `brms` only plots the post-warmup iter
 ```{r, traceplot}
 ```
 
-Since I want to see if the different initial conditions did something useful, I was trying to make a trace plot that shows warmup. Solomon Kurz has examples, but his code just doesn't work for me, it always ignores the warmup. So this following plot doesn't show yet what I want. It's another trace plot using the `bayesplot` package - which has an example of making the plot I want, but only for an `rstan` output object, and I don't know how to get the warmups out of the `brmsfit` object. So for now, what's shown doesn't actually include the warmups. Leaving this plot for now and moving on...
+Since I want to see if the different initial conditions did something useful, I was trying to make a trace plot that shows warmup. Solomon Kurz has [an example using the `ggmcmc` package](https://bookdown.org/content/4857/markov-chain-monte-carlo.html#visualization.), but his code doesn't work for me, it always ignores the warmup. I used `r warmup` warmup samples and `r iter-warmup` post-warmup samples for each chain. Currently, the figure only shows post-warmup.
+
+For now, it's another trace plot using the `bayesplot` package - also which has an example of making the plot I want, but for some reason the `stanfit` object inside the `brms` output does not contain the warmups. So for now, what's shown doesn't actually include the warmups. Leaving this plot for now and moving on...
 
 ```{r, traceplot-2}
 ```
@@ -224,10 +226,7 @@ We can actually do that by looking briefly at the summaries for both fits.
 ```{r mod_1_3_summary, message = FALSE}
 ```
 
-Note the different naming of the parameters in `brms`. It's unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have `dose` in their names are the ones we called $a_1$ and $b_1$ in our models. The many `_id` parameters are our previous $a_0$ and $b_0$ parameters. Conceptually, they are on the individual level. But we don't have a nested/multi-level structure here, which seems to lead `brms` to consider every parameter on the same level, and thus labeling them all _population level_. 
-
-Some of the R-hat values for model 1 are not at 1, and the ESS (the effective sample size) is small. Model 1 also took longer to run. That all indicates that the priors for model 3 are better.
-
+Note the different naming of the parameters in `brms`. It's unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have `dose` in their names are the ones we called $a_1$ and $b_1$ in our models. The many `_id` parameters are our previous $a_0$ and $b_0$ parameters. Conceptually, the latter are on the individual level. But we don't have a nested/multi-level structure here, which seems to lead `brms` to consider every parameter on the same level, and thus labeling them all _population level_. 
 
 
 Now, let's look at priors and posteriors somewhat more. First, we extract priors and posteriors. 
@@ -235,7 +234,7 @@ Now, let's look at priors and posteriors somewhat more. First, we extract priors
 ```{r mod_1_3_prior, message = FALSE}
 ```
 
-Now we can plot the distributions. I'm focusing on the $a1$ and $b1$ parameters since those are of more interest, and because I couldn't figure out quickly how to get out and process all the individual level $a_0$ and $b_0$ parameters from `brms` `r emoji::emoji('grin')`.
+Now we can plot the distributions. I'm focusing on the $a_1$ and $b_1$ parameters since those are of more interest, and because I couldn't figure out quickly how to get out and process all the individual level $a_0$ and $b_0$ parameters from `brms` `r emoji::emoji('grin')`.
 
 ```{r mod_1_3_prior_plots, message = FALSE}
 ```
@@ -252,30 +251,30 @@ Apart from the unfortunate naming of parameters in `brms`, these are the same pl
 
 Let's look at the posteriors in numerical form.
 
-```{r mod_1_3_pars}
+```{r mod_1_3_pars, warning=FALSE, message=FALSE}
 ```
 
-Again, model 1 seems worse, with higher uncertainty intervals.
+Again, model 1 seems worse, with higher uncertainty intervals for the $a_1$ and $b_1$ parameters and the mean further away from the true value. 
+
+<!-- I'm not sure why the mean estimates for $a_0$ and $b_0$ are also off. Maybe the way I computed the mean across all individuals of the means of the distribution skewed things? Not sure. Since neither of these models are that great anyway, I'm not trying to dig deeper for now (but if you know what's going on, let me know). -->
 
 We can also compare the models as we did for `rethinking` using these lines of code:
 
 ```{r mod_1_3_comparison}
 ```
 
-Model performance is similar between models.
+Model performance is similar between models. Surprisingly, the WAIC values are not that close to those reported by `rethinking`. Also, the `pWAIC`, which is a measure for the effective number of parameters in each model, is not quite the same. I am not sure what the reason is for these differences.
 
 
 ## Comparison with the truth and `ulam`
 
 The values used to generate the data are: $\sigma =$ `r pars['sigma']`, $\mu_a =$ `r pars['a0_mu']`, $\mu_b =$ `r pars['b0_mu']`, $a_1 =$ `r pars['a1']`, $b_1 =$ `r pars['b1']`. 
 
-Since the models are the same as those we previously fit with `ulam`, only a different `R` package is used to run them, we should expect very similar results. That is indeed what we find, the parameter estimates are very similar. The same holds for model performance as measured by WAIC. 
+Since the models are the same as those we previously fit with `ulam`, only a different `R` package is used to run them, we should expect very similar results. This is the case. We find that as for the `ulam` fits, the estimates for $a_0$, $b_0$ and $\sigma$ are similar to the values used the generate the data, but estimates for $a_1$ and $b_1$ are not that great. The agreement with `ulam` is good, because we should expect that if we fit the same models, results should - up to numerical/sampling differences - be the same, no matter what software implementation we use. It also suggests that we did things right - or made the same mistake in both implementations! `r emoji::emoji('grin')`.
+
+Why the WAIC estimates are different is currently not clear to me. It could be that the 2 packages use different definitions/ways to compute it. Or something more fundamental is still different. I'm not sure.
 
 
-
-That's good, because we should expect that if we fit the same models, results should - up to numerical/sampling differences - be the same, no matter what software implementation we use. It also suggests that we did things right - or made the same mistake in both implementations! `r emoji::emoji('grin')`.
-
-We find that as for the `ulam` fits, the estimates for $a_0$, $b_0$ and $\sigma$ are similar to the values used the generate the data, but estimates for $a_1$ and $b_1$ are not that great.
 
 
 ## Model 2a
@@ -286,21 +285,21 @@ Here is just another quick table for the posteriors.
 ```{r mod_2a_exploration}
 ```
 
-The parameters that have `_Intercept` in their name are what we called $\mu_a$ and $\mu_b$, the ones containing `_dose` are our $a_1$ and $b_1$. We find pretty much the same results we found using `ulam`.
+The parameters that have `_Intercept` in their name are what we called $\mu_a$ and $\mu_b$, the ones containing `_dose` are our $a_1$ and $b_1$. We find pretty much the same results we found using `ulam`. Specifically, the main parameters are estimated well, but because the model is not very flexible, the estimate for $\sigma$ is much larger, since it needs to account for all the individual-level variation we ommitted from the model itself.
 
 
 ## Model 4
 
-This is what I consider the most interesting and conceptually best model. It performed best in the `ulam` fits. Let's see how it looks here. 
+This is what I consider the most interesting and conceptually best model. It performed best in the `ulam` fits. Let's see how it looks here. It is worth pointing out that this model ran much faster compared to models 1 and 3, it only took `r fl[[4]]$runtime` minutes.
 
 We'll start with the summary for the model.
 
 ```{r mod_4_exploration}
 ```
 
-Next, the prior/posterior plots.
+Next, the prior/posterior plots. To ensure one can see the priors, I'm cutting off the y-axis at 10, that's why the posteriors look a bit weird. They do infected extend and peak like the distributions shown for models 1 and 3.
 
-```{r mod_4_prior_plots}
+```{r mod_4_prior_plots, warning=FALSE}
 ```
 
 Numerical output for the posterior:
@@ -308,11 +307,14 @@ Numerical output for the posterior:
 ```{r mod_4_pars}
 ```
 
-Finishing with the pairs lots:
+These estimates look good, close to the truth.
 
+Finishing with the pairs lots:
 
 ```{r mod_4_pair_plots}
 ```
+
+The strong correlations between parameters are reduced, the same we say with the `ulam` models.
 
 As was the case for the `ulam` fits, model 4 seems to perform overall best.
 
@@ -323,6 +325,8 @@ We can repeat the model comparison we did above, now including all 4 models.
 
 ```{r mod_all_comparison}
 ```
+
+Model 4 is considered best by WAIC, though not by much. The above results, namely faster runtime and better estimates, speak more convincingly to the fact that model 4 is the best of these. The WAIC are still different from those reported by `rethinking``. Again, I don't know why.
 
 
 
@@ -342,10 +346,48 @@ Here is what we get:
 ```{r priorexploration-2}
 ```
 
-Closer inspection shows that for models 1 and 3, the priors include those strange ones that only have a class but no coefficient. My guess is those are not "real", and thus we actually have the right number of priors/parameters. But model 4 is confusing, I'm not sure how to interpret this. Here is the full list of priors:
+Closer inspection shows that for models 1 and 3, the priors include those strange `flat` ones that only have a class but no coefficient. My guess is those are not "real", and thus we actually have the right number of priors/parameters. This can be checked by looking at the names of all the parameters for say model 1. Here they are:
 
 ```{r priorexploration-3}
 ```
+
+We can see that there are the right number of both priors and posterior parameters, namely 2 times `r Ntot` for the individual level parameters, plus 2 dose parameters and $\sigma$. 
+
+I find model 4 more confusing. Here is the full list of priors:
+
+```{r priorexploration-4}
+```
+
+And this shows the names of all parameters 
+
+```{r priorexploration-5}
+```
+
+To compare directly, this is the model we want:
+
+$$
+\begin{aligned}
+Y_{i,t}  & \sim \mathrm{Normal}\left(\mu_{i,t}, \sigma\right) \\
+\mu_{i,t} &  =  \exp(\alpha_{i}) \log (t_{i}) -\exp(\beta_{i}) t_{i} \\
+\alpha_{i} &  =  a_{0,i} + a_1 \left(\log (D_i) - \log (D_m)\right)  \\
+\beta_{i} &  =  b_{0,i} + b_1 \left(\log (D_i) - \log (D_m)\right) \\
+a_{0,i} & \sim \mathrm{Normal}(\mu_a, \sigma_a) \\
+b_{0,i} & \sim \mathrm{Normal}(\mu_b, \sigma_a) \\
+a_1 & \sim \mathrm{Normal}(0.3, 1) \\
+b_1 & \sim \mathrm{Normal}(-0.3, 1) \\
+\mu_a & \sim \mathrm{Normal}(2, 1) \\
+\mu_b & \sim \mathrm{Normal}(0.5, 1) \\
+\sigma &  \sim \mathrm{HalfCauchy}(0,1)  \\
+\sigma_a & \sim \mathrm{HalfCauchy}(0,1)  \\
+\sigma_b & \sim \mathrm{HalfCauchy}(0,1)  
+\end{aligned}
+$$
+
+If understand `brms` correctly, those `z_` parameters are internal adjustments to make things more efficient and can otherwise be ignored. That means we have 2 times `r Ntot` parameters for the individual levels that all start with `r_id`. Those correspond to the $a_{0,i}$ and $b_{0,1}$, and they don't have pre-defined priors, since they are computed based on other parameters. Then we have 2 dose parameters, which map to $a_1$ and $b_1$, both come with priors. We have 2 `_Intercept` parameters, which correspond to $\mu_a$ and $\mu_b$, again with priors. We have $\sigma$ with prior, and the two `sd_id` parameters seem to be those we call $\sigma_a$ and $\sigma_b$ in our equations. 
+
+So it looks like there is a match between our mathematical model we want, and the way we implemented it in `brms`. Still, I find the `brms` notation confusing and not that easy to follow. In that respect I much prefer `ulam/rethinking`.
+
+In any case, I somewhat convinced myself that I'm fitting the same models here with `brms` that I'm fitting with `ulam` (which still leaves me confused about the differences in WAIC).
 
 
 # Computing predictions

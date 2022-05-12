@@ -329,12 +329,12 @@ In terms of run times, there wasn't much difference, with `r round(fl[[4]]$runti
 
 If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true $\mu_a$, $\mu_b$ and $\sigma$ are estimated fairly well. Estimates for $a_1$ and $b_1$ are now also pretty good, and the credible intervals are less wide. 
 
-Now let's briefly run the `compare` function too and include model 3 as well:
+Now let's briefly run the `compare` function too and include model 3 as well. In addition to using WAIC for comparison, I'm also including PSIS. Read about it in the Statistical Rethinking book. One advantage of PSIS is that it gives warnings if the estimates might not be reliable. You see that this happens here.
 
 ```{r mod_4_4a_comparison}
 ```
 
-We do find that model 4/4a performs a bit better. Note that model 4 has more actual parameters, but the effective parameters (which is described by `pWAIC`) is smaller. 
+We do find that model 4/4a performs a bit better, but not by much. Note that model 4/4a has more actual parameters, but the effective parameters (which is described by `pWAIC`) is smaller. Though the difference is small and WAIC and PSIS don't fully agree.
 
 Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely and efficiently and is the best of the models. 
 

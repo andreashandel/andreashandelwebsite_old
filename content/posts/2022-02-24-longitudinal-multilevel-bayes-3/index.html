@@ -289,9 +289,11 @@ summary(fit2)</code></pre>
 <pre class="r"><code># Model 2a trace plots
 plot(fit2)</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/traceplot-1.png" width="672" /></p>
-<p>Since I want to see if the different initial conditions did something useful, I was trying to make a trace plot that shows warmup. Solomon Kurz has examples, but his code just doesn’t work for me, it always ignores the warmup. So this following plot doesn’t show yet what I want. It’s another trace plot using the <code>bayesplot</code> package - which has an example of making the plot I want, but only for an <code>rstan</code> output object, and I don’t know how to get the warmups out of the <code>brmsfit</code> object. So for now, what’s shown doesn’t actually include the warmups. Leaving this plot for now and moving on…</p>
+<p>Since I want to see if the different initial conditions did something useful, I was trying to make a trace plot that shows warmup. Solomon Kurz has <a href="https://bookdown.org/content/4857/markov-chain-monte-carlo.html#visualization.">an example using the <code>ggmcmc</code> package</a>, but his code doesn’t work for me, it always ignores the warmup. I used 6000 warmup samples and 3000 post-warmup samples for each chain. Currently, the figure only shows post-warmup.</p>
+<p>For now, it’s another trace plot using the <code>bayesplot</code> package - also which has an example of making the plot I want, but for some reason the <code>stanfit</code> object inside the <code>brms</code> output does not contain the warmups. So for now, what’s shown doesn’t actually include the warmups. Leaving this plot for now and moving on…</p>
 <pre class="r"><code># Another trace plot, using the bayesplot package
-bayesplot::mcmc_trace(fit2,  n_warmup = 400, pars = variables(fit2)[c(1,2,3,4,5)])</code></pre>
+posterior &lt;- rstan::extract(fit2$fit, inc_warmup = TRUE, permuted = FALSE)
+bayesplot::mcmc_trace(posterior, n_warmup = 400, pars = variables(fit2)[c(1,2,3,4,5)])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/traceplot-2-1.png" width="672" /></p>
 <p>Here is a version of the trank plots. I’m pulling out the first 5 variables since the others are not that interesting for this plot, e.g., they contain prior samples. You can look at them if you want.</p>
 <pre class="r"><code># Model 2a trank plots with bayesplot
@@ -455,15 +457,14 @@ summary(fit1)</code></pre>
 ## Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
 ## and Tail_ESS are effective sample size measures, and Rhat is the potential
 ## scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
-<p>Note the different naming of the parameters in <code>brms</code>. It’s unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have <code>dose</code> in their names are the ones we called <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> in our models. The many <code>_id</code> parameters are our previous <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> parameters. Conceptually, they are on the individual level. But we don’t have a nested/multi-level structure here, which seems to lead <code>brms</code> to consider every parameter on the same level, and thus labeling them all <em>population level</em>.</p>
-<p>Some of the R-hat values for model 1 are not at 1, and the ESS (the effective sample size) is small. Model 1 also took longer to run. That all indicates that the priors for model 3 are better.</p>
+<p>Note the different naming of the parameters in <code>brms</code>. It’s unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have <code>dose</code> in their names are the ones we called <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> in our models. The many <code>_id</code> parameters are our previous <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> parameters. Conceptually, the latter are on the individual level. But we don’t have a nested/multi-level structure here, which seems to lead <code>brms</code> to consider every parameter on the same level, and thus labeling them all <em>population level</em>.</p>
 <p>Now, let’s look at priors and posteriors somewhat more. First, we extract priors and posteriors.</p>
 <pre class="r"><code>#get priors and posteriors for models 1 and 3
 m1prior &lt;- prior_draws(fit1)
 m1post &lt;- as_draws_df(fit1)
 m3prior &lt;- prior_draws(fit3)
 m3post &lt;- as_draws_df(fit3)</code></pre>
-<p>Now we can plot the distributions. I’m focusing on the <span class="math inline">\(a1\)</span> and <span class="math inline">\(b1\)</span> parameters since those are of more interest, and because I couldn’t figure out quickly how to get out and process all the individual level <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> parameters from <code>brms</code> 😁.</p>
+<p>Now we can plot the distributions. I’m focusing on the <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> parameters since those are of more interest, and because I couldn’t figure out quickly how to get out and process all the individual level <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> parameters from <code>brms</code> 😁.</p>
 <pre class="r"><code>#showing density plots for a1
 
 #make a data frame and get it in shape for ggplot
@@ -512,10 +513,13 @@ pairs(fit1, variable = variables(fit1)[c(16:19,25)])</code></pre>
 <p>Let’s look at the posteriors in numerical form.</p>
 <pre class="r"><code># model 1 first
 fit1pars = posterior::summarize_draws(m1post, &quot;mean&quot;, &quot;sd&quot;, &quot;quantile2&quot;, default_convergence_measures())
-fit1a0mean &lt;- fit1pars %&gt;% dplyr::filter(grepl(&#39;alpha_id&#39;,variable)) %&gt;%
-  summarize(mean = mean(mean))
-fit1b0mean &lt;- fit1pars %&gt;% dplyr::filter(grepl(&#39;beta_id&#39;,variable)) %&gt;%
-  summarize(mean = mean(mean))
+
+#only entries for the a0 parameters
+a0post &lt;- m1post %&gt;% dplyr::select(starts_with(&#39;b_alpha_id&#39;))
+fit1a0mean &lt;- mean(colMeans(a0post))
+#only entries for the b0 parameters
+b0post &lt;- m1post %&gt;% dplyr::select(starts_with(&#39;b_beta_id&#39;))
+fit1b0mean &lt;- mean(colMeans(b0post))
 fit1otherpars &lt;- fit1pars %&gt;% dplyr::filter(!grepl(&#39;_id&#39;,variable)) %&gt;%
   dplyr::filter(!grepl(&#39;prior&#39;,variable))
 print(fit1otherpars)</code></pre>
@@ -527,19 +531,17 @@ print(fit1otherpars)</code></pre>
 ## 3 sigma               1.06  0.0514    0.981    1.15  1.00   16342.   11307.
 ## 4 lp__             -549.    5.58   -559.    -540.    1.00    4974.    8286.</code></pre>
 <pre class="r"><code>print(c(fit1a0mean,fit1b0mean))</code></pre>
-<pre><code>## $mean
-## [1] 2.473852
-## 
-## $mean
-## [1] 0.7488429</code></pre>
+<pre><code>## [1] 2.960140 1.006334</code></pre>
 <pre class="r"><code># repeat for model 3
 fit3pars = posterior::summarize_draws(m3post, &quot;mean&quot;, &quot;sd&quot;, &quot;quantile2&quot;, default_convergence_measures())
-fit3a0mean &lt;- fit3pars %&gt;% dplyr::filter(grepl(&#39;alpha_id&#39;,variable)) %&gt;%
-                   summarize(mean = mean(mean))
-fit3b0mean &lt;- fit3pars %&gt;% dplyr::filter(grepl(&#39;beta_id&#39;,variable)) %&gt;%
-                   summarize(mean = mean(mean))
+#only entries for the a0 parameters
+a0post &lt;- m3post %&gt;% dplyr::select(starts_with(&#39;b_alpha_id&#39;))
+fit3a0mean &lt;- mean(colMeans(a0post))
+#only entries for the b0 parameters
+b0post &lt;- m3post %&gt;% dplyr::select(starts_with(&#39;b_beta_id&#39;))
+fit3b0mean &lt;- mean(colMeans(b0post))
 fit3otherpars &lt;- fit3pars %&gt;% dplyr::filter(!grepl(&#39;_id&#39;,variable)) %&gt;%
-                      dplyr::filter(!grepl(&#39;prior&#39;,variable))
+  dplyr::filter(!grepl(&#39;prior&#39;,variable))
 print(fit3otherpars)</code></pre>
 <pre><code>## # A tibble: 4 x 8
 ##   variable              mean     sd        q5       q95  rhat ess_bulk ess_tail
@@ -549,12 +551,9 @@ print(fit3otherpars)</code></pre>
 ## 3 sigma               1.06   0.0515    0.982     1.15    1.00   15961.   10880.
 ## 4 lp__             -453.     5.60   -463.     -444.      1.00    4605.    7829.</code></pre>
 <pre class="r"><code>print(c(fit3a0mean,fit3b0mean))</code></pre>
-<pre><code>## $mean
-## [1] 2.488644
-## 
-## $mean
-## [1] 0.7399183</code></pre>
-<p>Again, model 1 seems worse, with higher uncertainty intervals.</p>
+<pre><code>## [1] 2.9756367 0.9808696</code></pre>
+<p>Again, model 1 seems worse, with higher uncertainty intervals for the <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> parameters and the mean further away from the true value.</p>
+<!-- I'm not sure why the mean estimates for $a_0$ and $b_0$ are also off. Maybe the way I computed the mean across all individuals of the means of the distribution skewed things? Not sure. Since neither of these models are that great anyway, I'm not trying to dig deeper for now (but if you know what's going on, let me know). -->
 <p>We can also compare the models as we did for <code>rethinking</code> using these lines of code:</p>
 <pre class="r"><code>fit13comp &lt;- loo_compare(add_criterion(fit1,&quot;waic&quot;),
             add_criterion(fit3,&quot;waic&quot;),
@@ -570,14 +569,13 @@ print(fit3otherpars)</code></pre>
 ##                             se_p_waic waic   se_waic
 ## add_criterion(fit1, &quot;waic&quot;)    4.3     832.5   23.4 
 ## add_criterion(fit3, &quot;waic&quot;)    4.3     832.6   23.4</code></pre>
-<p>Model performance is similar between models.</p>
+<p>Model performance is similar between models. Surprisingly, the WAIC values are not that close to those reported by <code>rethinking</code>. Also, the <code>pWAIC</code>, which is a measure for the effective number of parameters in each model, is not quite the same. I am not sure what the reason is for these differences.</p>
 </div>
 <div id="comparison-with-the-truth-and-ulam" class="section level2">
 <h2>Comparison with the truth and <code>ulam</code></h2>
 <p>The values used to generate the data are: <span class="math inline">\(\sigma =\)</span> 1, <span class="math inline">\(\mu_a =\)</span> 3, <span class="math inline">\(\mu_b =\)</span> 1, <span class="math inline">\(a_1 =\)</span> 0.1, <span class="math inline">\(b_1 =\)</span> -0.1.</p>
-<p>Since the models are the same as those we previously fit with <code>ulam</code>, only a different <code>R</code> package is used to run them, we should expect very similar results. That is indeed what we find, the parameter estimates are very similar. The same holds for model performance as measured by WAIC.</p>
-<p>That’s good, because we should expect that if we fit the same models, results should - up to numerical/sampling differences - be the same, no matter what software implementation we use. It also suggests that we did things right - or made the same mistake in both implementations! 😁.</p>
-<p>We find that as for the <code>ulam</code> fits, the estimates for <span class="math inline">\(a_0\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(\sigma\)</span> are similar to the values used the generate the data, but estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are not that great.</p>
+<p>Since the models are the same as those we previously fit with <code>ulam</code>, only a different <code>R</code> package is used to run them, we should expect very similar results. This is the case. We find that as for the <code>ulam</code> fits, the estimates for <span class="math inline">\(a_0\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(\sigma\)</span> are similar to the values used the generate the data, but estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are not that great. The agreement with <code>ulam</code> is good, because we should expect that if we fit the same models, results should - up to numerical/sampling differences - be the same, no matter what software implementation we use. It also suggests that we did things right - or made the same mistake in both implementations! 😁.</p>
+<p>Why the WAIC estimates are different is currently not clear to me. It could be that the 2 packages use different definitions/ways to compute it. Or something more fundamental is still different. I’m not sure.</p>
 </div>
 <div id="model-2a-1" class="section level2">
 <h2>Model 2a</h2>
@@ -596,11 +594,11 @@ print(fit2otherpars)</code></pre>
 ## 4 b_beta_dose_adj     -0.0971 0.00862   -0.111  -8.29e-2  1.00    6947.    7786.
 ## 5 sigma                6.88   0.302      6.39    7.39e+0  1.00    8391.    7850.
 ## 6 lp__              -892.     1.59    -895.     -8.90e+2  1.00    4964.    7039.</code></pre>
-<p>The parameters that have <code>_Intercept</code> in their name are what we called <span class="math inline">\(\mu_a\)</span> and <span class="math inline">\(\mu_b\)</span>, the ones containing <code>_dose</code> are our <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. We find pretty much the same results we found using <code>ulam</code>.</p>
+<p>The parameters that have <code>_Intercept</code> in their name are what we called <span class="math inline">\(\mu_a\)</span> and <span class="math inline">\(\mu_b\)</span>, the ones containing <code>_dose</code> are our <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. We find pretty much the same results we found using <code>ulam</code>. Specifically, the main parameters are estimated well, but because the model is not very flexible, the estimate for <span class="math inline">\(\sigma\)</span> is much larger, since it needs to account for all the individual-level variation we ommitted from the model itself.</p>
 </div>
 <div id="model-4-1" class="section level2">
 <h2>Model 4</h2>
-<p>This is what I consider the most interesting and conceptually best model. It performed best in the <code>ulam</code> fits. Let’s see how it looks here.</p>
+<p>This is what I consider the most interesting and conceptually best model. It performed best in the <code>ulam</code> fits. Let’s see how it looks here. It is worth pointing out that this model ran much faster compared to models 1 and 3, it only took 10.5518333 minutes.</p>
 <p>We’ll start with the summary for the model.</p>
 <pre class="r"><code>fit4 &lt;- fl[[4]]$fit
 m4prior &lt;- prior_draws(fit4)
@@ -635,7 +633,7 @@ summary(fit4)</code></pre>
 ## Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
 ## and Tail_ESS are effective sample size measures, and Rhat is the potential
 ## scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
-<p>Next, the prior/posterior plots.</p>
+<p>Next, the prior/posterior plots. To ensure one can see the priors, I’m cutting off the y-axis at 10, that’s why the posteriors look a bit weird. They do infected extend and peak like the distributions shown for models 1 and 3.</p>
 <pre class="r"><code>#showing density plots for a1 and b1
 #make a data frame and get it in shape for ggplot
 m4df &lt;- data.frame(a1_prior = m4prior$b_alpha_dose_adj,
@@ -646,31 +644,29 @@ m4df &lt;- data.frame(a1_prior = m4prior$b_alpha_dose_adj,
 # make plot
 p1 &lt;- m4df %&gt;%
   ggplot() +
-  geom_density(aes(x = value, color = parameter, linetype = type), size = 1) +
+  ylim(0, 10) + xlim(-2, 2) +
+  geom_density(aes(x = value, color = parameter, linetype = type), adjust = 10, size = 1) +
   ggtitle(&#39;model 4, parameters a1 and b1&#39;) +
-  ylim(0, 10) +
   theme_minimal()
 plot(p1)</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_4_prior_plots-1.png" width="672" /></p>
 <p>Numerical output for the posterior:</p>
 <pre class="r"><code>fit4pars = posterior::summarize_draws(m4post, &quot;mean&quot;, &quot;sd&quot;, &quot;quantile2&quot;, default_convergence_measures())
 fit4otherpars &lt;- fit4pars %&gt;% dplyr::filter(!grepl(&#39;_id&#39;,variable)) %&gt;%
-  dplyr::filter(!grepl(&#39;prior&#39;,variable))
+  dplyr::filter(!grepl(&#39;prior&#39;,variable)) %&gt;%
+  dplyr::filter(!grepl(&#39;z_&#39;,variable))
+
 print(fit4otherpars)</code></pre>
-<pre><code>## # A tibble: 54 x 8
-##    variable               mean     sd        q5      q95  rhat ess_bulk ess_tail
-##    &lt;chr&gt;                 &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-##  1 b_alpha_Intercept    2.99   0.0197    2.95    3.02e+0  1.00    3771.    5404.
-##  2 b_alpha_dose_adj     0.0861 0.0106    0.0688  1.04e-1  1.00    3979.    5040.
-##  3 b_beta_Intercept     0.987  0.0247    0.946   1.03e+0  1.00    3486.    5134.
-##  4 b_beta_dose_adj     -0.106  0.0131   -0.127  -8.44e-2  1.00    3855.    5732.
-##  5 sigma                1.06   0.0517    0.981   1.15e+0  1.00   10136.   10314.
-##  6 lp__              -468.     7.47   -481.     -4.57e+2  1.00    2720.    4987.
-##  7 z_1[1,1]             2.08   0.489     1.30    2.91e+0  1.00    4774.    7745.
-##  8 z_1[1,2]             1.66   0.454     0.933   2.42e+0  1.00    4746.    6738.
-##  9 z_1[1,3]            -0.488  0.408    -1.16    1.86e-1  1.00    4786.    6751.
-## 10 z_1[1,4]            -1.21   0.440    -1.95   -4.85e-1  1.00    4525.    6344.
-## # ... with 44 more rows</code></pre>
+<pre><code>## # A tibble: 6 x 8
+##   variable               mean     sd        q5       q95  rhat ess_bulk ess_tail
+##   &lt;chr&gt;                 &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1 b_alpha_Intercept    2.99   0.0197    2.95      3.02    1.00    3771.    5404.
+## 2 b_alpha_dose_adj     0.0861 0.0106    0.0688    0.104   1.00    3979.    5040.
+## 3 b_beta_Intercept     0.987  0.0247    0.946     1.03    1.00    3486.    5134.
+## 4 b_beta_dose_adj     -0.106  0.0131   -0.127    -0.0844  1.00    3855.    5732.
+## 5 sigma                1.06   0.0517    0.981     1.15    1.00   10136.   10314.
+## 6 lp__              -468.     7.47   -481.     -457.      1.00    2720.    4987.</code></pre>
+<p>These estimates look good, close to the truth.</p>
 <p>Finishing with the pairs lots:</p>
 <pre class="r"><code># a few parameters for each dose
 #low dose
@@ -682,35 +678,48 @@ pairs(fit4, variable = variables(fit4)[c(8:11,25)])</code></pre>
 <pre class="r"><code>#high dose
 pairs(fit4, variable = variables(fit4)[c(16:19,25)])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/mod_4_pair_plots-3.png" width="672" /></p>
+<p>The strong correlations between parameters are reduced, the same we say with the <code>ulam</code> models.</p>
 <p>As was the case for the <code>ulam</code> fits, model 4 seems to perform overall best.</p>
 </div>
 <div id="comparing-all-models" class="section level2">
 <h2>Comparing all models</h2>
 <p>We can repeat the model comparison we did above, now including all 4 models.</p>
-<pre class="r"><code>compall &lt;- loo_compare(add_criterion(fit1,&quot;waic&quot;),
-                    add_criterion(fit2,&quot;waic&quot;),
-                    add_criterion(fit3,&quot;waic&quot;),
-                    add_criterion(fit4,&quot;waic&quot;),
-                    criterion = &quot;waic&quot;)</code></pre>
+<pre class="r"><code>fit1a &lt;- add_criterion(fit1,c(&quot;waic&quot;,&quot;loo&quot;))</code></pre>
 <pre><code>## Warning: 
 ## 30 (11.4%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre><code>## Warning: Found 6 observations with a pareto_k &gt; 0.7 in model &#39;fit1&#39;. It is
+## recommended to set &#39;moment_match = TRUE&#39; in order to perform moment matching for
+## problematic observations.</code></pre>
+<pre class="r"><code>fit2a &lt;- add_criterion(fit2,c(&quot;waic&quot;,&quot;loo&quot;))</code></pre>
 <pre><code>## Warning: 
 ## 5 (1.9%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre class="r"><code>fit3a &lt;- add_criterion(fit3,c(&quot;waic&quot;,&quot;loo&quot;))</code></pre>
 <pre><code>## Warning: 
 ## 29 (11.0%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
+<pre><code>## Warning: Found 5 observations with a pareto_k &gt; 0.7 in model &#39;fit3&#39;. It is
+## recommended to set &#39;moment_match = TRUE&#39; in order to perform moment matching for
+## problematic observations.</code></pre>
+<pre class="r"><code>fit4a &lt;- add_criterion(fit4,c(&quot;waic&quot;,&quot;loo&quot;))</code></pre>
 <pre><code>## Warning: 
 ## 27 (10.2%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
-<pre class="r"><code>print(compall, simplify = FALSE)</code></pre>
-<pre><code>##                             elpd_diff se_diff elpd_waic se_elpd_waic p_waic
-## add_criterion(fit4, &quot;waic&quot;)    0.0       0.0  -415.7      11.7         42.7
-## add_criterion(fit1, &quot;waic&quot;)   -0.6       1.2  -416.3      11.7         43.5
-## add_criterion(fit3, &quot;waic&quot;)   -0.6       1.3  -416.3      11.7         43.5
-## add_criterion(fit2, &quot;waic&quot;) -473.6      23.0  -889.4      22.4         10.3
-##                             se_p_waic waic   se_waic
-## add_criterion(fit4, &quot;waic&quot;)    4.3     831.4   23.4 
-## add_criterion(fit1, &quot;waic&quot;)    4.3     832.5   23.4 
-## add_criterion(fit3, &quot;waic&quot;)    4.3     832.6   23.4 
-## add_criterion(fit2, &quot;waic&quot;)    3.0    1778.7   44.8</code></pre>
+<pre><code>## Warning: Found 6 observations with a pareto_k &gt; 0.7 in model &#39;fit4&#39;. It is
+## recommended to set &#39;moment_match = TRUE&#39; in order to perform moment matching for
+## problematic observations.</code></pre>
+<pre class="r"><code>compall1 &lt;- loo_compare(fit1a,fit2a,fit3a,fit4a, criterion = &quot;waic&quot;)
+compall2 &lt;- loo_compare(fit1a,fit2a,fit3a,fit4a, criterion = &quot;loo&quot;)
+print(compall1, simplify = FALSE)</code></pre>
+<pre><code>##       elpd_diff se_diff elpd_waic se_elpd_waic p_waic se_p_waic waic   se_waic
+## fit4a    0.0       0.0  -415.7      11.7         42.7    4.3     831.4   23.4 
+## fit1a   -0.6       1.2  -416.3      11.7         43.5    4.3     832.5   23.4 
+## fit3a   -0.6       1.3  -416.3      11.7         43.5    4.3     832.6   23.4 
+## fit2a -473.6      23.0  -889.4      22.4         10.3    3.0    1778.7   44.8</code></pre>
+<pre class="r"><code>print(compall2, simplify = FALSE)</code></pre>
+<pre><code>##       elpd_diff se_diff elpd_loo se_elpd_loo p_loo  se_p_loo looic  se_looic
+## fit4a    0.0       0.0  -419.8     12.1        46.8    5.0    839.6   24.2  
+## fit3a   -0.6       1.4  -420.4     12.1        47.6    5.0    840.7   24.2  
+## fit1a   -1.1       1.5  -421.0     12.2        48.2    5.1    841.9   24.4  
+## fit2a -469.6      23.0  -889.4     22.4        10.3    3.1   1778.9   44.8</code></pre>
+<p>Model 4 is considered best by WAIC, though not by much. The above results, namely faster runtime and better estimates, speak more convincingly to the fact that model 4 is the best of these. The WAIC are still different from those reported by `rethinking``. Again, I don’t know why.</p>
 </div>
 <div id="prior-exploration" class="section level2">
 <h2>Prior exploration</h2>
@@ -749,7 +758,46 @@ postprior3 &lt;- prior_summary(fit3)
 postprior4 &lt;- prior_summary(fit4)
 print(paste(nrow(postprior1),nrow(postprior3),nrow(postprior4)))</code></pre>
 <pre><code>## [1] &quot;53 53 13&quot;</code></pre>
-<p>Closer inspection shows that for models 1 and 3, the priors include those strange ones that only have a class but no coefficient. My guess is those are not “real”, and thus we actually have the right number of priors/parameters. But model 4 is confusing, I’m not sure how to interpret this. Here is the full list of priors:</p>
+<p>Closer inspection shows that for models 1 and 3, the priors include those strange <code>flat</code> ones that only have a class but no coefficient. My guess is those are not “real”, and thus we actually have the right number of priors/parameters. This can be checked by looking at the names of all the parameters for say model 1. Here they are:</p>
+<pre class="r"><code>names(m1post)</code></pre>
+<pre><code>##   [1] &quot;b_alpha_id1&quot;            &quot;b_alpha_id2&quot;            &quot;b_alpha_id3&quot;           
+##   [4] &quot;b_alpha_id4&quot;            &quot;b_alpha_id5&quot;            &quot;b_alpha_id6&quot;           
+##   [7] &quot;b_alpha_id7&quot;            &quot;b_alpha_id8&quot;            &quot;b_alpha_id9&quot;           
+##  [10] &quot;b_alpha_id10&quot;           &quot;b_alpha_id11&quot;           &quot;b_alpha_id12&quot;          
+##  [13] &quot;b_alpha_id13&quot;           &quot;b_alpha_id14&quot;           &quot;b_alpha_id15&quot;          
+##  [16] &quot;b_alpha_id16&quot;           &quot;b_alpha_id17&quot;           &quot;b_alpha_id18&quot;          
+##  [19] &quot;b_alpha_id19&quot;           &quot;b_alpha_id20&quot;           &quot;b_alpha_id21&quot;          
+##  [22] &quot;b_alpha_id22&quot;           &quot;b_alpha_id23&quot;           &quot;b_alpha_id24&quot;          
+##  [25] &quot;b_alpha_dose_adj&quot;       &quot;b_beta_id1&quot;             &quot;b_beta_id2&quot;            
+##  [28] &quot;b_beta_id3&quot;             &quot;b_beta_id4&quot;             &quot;b_beta_id5&quot;            
+##  [31] &quot;b_beta_id6&quot;             &quot;b_beta_id7&quot;             &quot;b_beta_id8&quot;            
+##  [34] &quot;b_beta_id9&quot;             &quot;b_beta_id10&quot;            &quot;b_beta_id11&quot;           
+##  [37] &quot;b_beta_id12&quot;            &quot;b_beta_id13&quot;            &quot;b_beta_id14&quot;           
+##  [40] &quot;b_beta_id15&quot;            &quot;b_beta_id16&quot;            &quot;b_beta_id17&quot;           
+##  [43] &quot;b_beta_id18&quot;            &quot;b_beta_id19&quot;            &quot;b_beta_id20&quot;           
+##  [46] &quot;b_beta_id21&quot;            &quot;b_beta_id22&quot;            &quot;b_beta_id23&quot;           
+##  [49] &quot;b_beta_id24&quot;            &quot;b_beta_dose_adj&quot;        &quot;sigma&quot;                 
+##  [52] &quot;prior_b_alpha_id1&quot;      &quot;prior_b_alpha_id2&quot;      &quot;prior_b_alpha_id3&quot;     
+##  [55] &quot;prior_b_alpha_id4&quot;      &quot;prior_b_alpha_id5&quot;      &quot;prior_b_alpha_id6&quot;     
+##  [58] &quot;prior_b_alpha_id7&quot;      &quot;prior_b_alpha_id8&quot;      &quot;prior_b_alpha_id9&quot;     
+##  [61] &quot;prior_b_alpha_id10&quot;     &quot;prior_b_alpha_id11&quot;     &quot;prior_b_alpha_id12&quot;    
+##  [64] &quot;prior_b_alpha_id13&quot;     &quot;prior_b_alpha_id14&quot;     &quot;prior_b_alpha_id15&quot;    
+##  [67] &quot;prior_b_alpha_id16&quot;     &quot;prior_b_alpha_id17&quot;     &quot;prior_b_alpha_id18&quot;    
+##  [70] &quot;prior_b_alpha_id19&quot;     &quot;prior_b_alpha_id20&quot;     &quot;prior_b_alpha_id21&quot;    
+##  [73] &quot;prior_b_alpha_id22&quot;     &quot;prior_b_alpha_id23&quot;     &quot;prior_b_alpha_id24&quot;    
+##  [76] &quot;prior_b_alpha_dose_adj&quot; &quot;prior_b_beta_id1&quot;       &quot;prior_b_beta_id2&quot;      
+##  [79] &quot;prior_b_beta_id3&quot;       &quot;prior_b_beta_id4&quot;       &quot;prior_b_beta_id5&quot;      
+##  [82] &quot;prior_b_beta_id6&quot;       &quot;prior_b_beta_id7&quot;       &quot;prior_b_beta_id8&quot;      
+##  [85] &quot;prior_b_beta_id9&quot;       &quot;prior_b_beta_id10&quot;      &quot;prior_b_beta_id11&quot;     
+##  [88] &quot;prior_b_beta_id12&quot;      &quot;prior_b_beta_id13&quot;      &quot;prior_b_beta_id14&quot;     
+##  [91] &quot;prior_b_beta_id15&quot;      &quot;prior_b_beta_id16&quot;      &quot;prior_b_beta_id17&quot;     
+##  [94] &quot;prior_b_beta_id18&quot;      &quot;prior_b_beta_id19&quot;      &quot;prior_b_beta_id20&quot;     
+##  [97] &quot;prior_b_beta_id21&quot;      &quot;prior_b_beta_id22&quot;      &quot;prior_b_beta_id23&quot;     
+## [100] &quot;prior_b_beta_id24&quot;      &quot;prior_b_beta_dose_adj&quot;  &quot;prior_sigma&quot;           
+## [103] &quot;lprior&quot;                 &quot;lp__&quot;                   &quot;.chain&quot;                
+## [106] &quot;.iteration&quot;             &quot;.draw&quot;</code></pre>
+<p>We can see that there are the right number of both priors and posterior parameters, namely 2 times 24 for the individual level parameters, plus 2 dose parameters and <span class="math inline">\(\sigma\)</span>.</p>
+<p>I find model 4 more confusing. Here is the full list of priors:</p>
 <pre class="r"><code>print(postprior4)</code></pre>
 <pre><code>##            prior class      coef group resp dpar nlpar lb ub       source
 ##           (flat)     b                           alpha            default
@@ -765,6 +813,87 @@ print(paste(nrow(postprior1),nrow(postprior3),nrow(postprior4)))</code></pre>
 ##     cauchy(0, 1)    sd              id            beta  0    (vectorized)
 ##     cauchy(0, 1)    sd Intercept    id            beta  0    (vectorized)
 ##     cauchy(0, 1) sigma                                  0            user</code></pre>
+<p>And this shows the names of all parameters</p>
+<pre class="r"><code>names(m4post)</code></pre>
+<pre><code>##   [1] &quot;b_alpha_Intercept&quot;         &quot;b_alpha_dose_adj&quot;         
+##   [3] &quot;b_beta_Intercept&quot;          &quot;b_beta_dose_adj&quot;          
+##   [5] &quot;sd_id__alpha_Intercept&quot;    &quot;sd_id__beta_Intercept&quot;    
+##   [7] &quot;sigma&quot;                     &quot;r_id__alpha[1,Intercept]&quot; 
+##   [9] &quot;r_id__alpha[2,Intercept]&quot;  &quot;r_id__alpha[3,Intercept]&quot; 
+##  [11] &quot;r_id__alpha[4,Intercept]&quot;  &quot;r_id__alpha[5,Intercept]&quot; 
+##  [13] &quot;r_id__alpha[6,Intercept]&quot;  &quot;r_id__alpha[7,Intercept]&quot; 
+##  [15] &quot;r_id__alpha[8,Intercept]&quot;  &quot;r_id__alpha[9,Intercept]&quot; 
+##  [17] &quot;r_id__alpha[10,Intercept]&quot; &quot;r_id__alpha[11,Intercept]&quot;
+##  [19] &quot;r_id__alpha[12,Intercept]&quot; &quot;r_id__alpha[13,Intercept]&quot;
+##  [21] &quot;r_id__alpha[14,Intercept]&quot; &quot;r_id__alpha[15,Intercept]&quot;
+##  [23] &quot;r_id__alpha[16,Intercept]&quot; &quot;r_id__alpha[17,Intercept]&quot;
+##  [25] &quot;r_id__alpha[18,Intercept]&quot; &quot;r_id__alpha[19,Intercept]&quot;
+##  [27] &quot;r_id__alpha[20,Intercept]&quot; &quot;r_id__alpha[21,Intercept]&quot;
+##  [29] &quot;r_id__alpha[22,Intercept]&quot; &quot;r_id__alpha[23,Intercept]&quot;
+##  [31] &quot;r_id__alpha[24,Intercept]&quot; &quot;r_id__beta[1,Intercept]&quot;  
+##  [33] &quot;r_id__beta[2,Intercept]&quot;   &quot;r_id__beta[3,Intercept]&quot;  
+##  [35] &quot;r_id__beta[4,Intercept]&quot;   &quot;r_id__beta[5,Intercept]&quot;  
+##  [37] &quot;r_id__beta[6,Intercept]&quot;   &quot;r_id__beta[7,Intercept]&quot;  
+##  [39] &quot;r_id__beta[8,Intercept]&quot;   &quot;r_id__beta[9,Intercept]&quot;  
+##  [41] &quot;r_id__beta[10,Intercept]&quot;  &quot;r_id__beta[11,Intercept]&quot; 
+##  [43] &quot;r_id__beta[12,Intercept]&quot;  &quot;r_id__beta[13,Intercept]&quot; 
+##  [45] &quot;r_id__beta[14,Intercept]&quot;  &quot;r_id__beta[15,Intercept]&quot; 
+##  [47] &quot;r_id__beta[16,Intercept]&quot;  &quot;r_id__beta[17,Intercept]&quot; 
+##  [49] &quot;r_id__beta[18,Intercept]&quot;  &quot;r_id__beta[19,Intercept]&quot; 
+##  [51] &quot;r_id__beta[20,Intercept]&quot;  &quot;r_id__beta[21,Intercept]&quot; 
+##  [53] &quot;r_id__beta[22,Intercept]&quot;  &quot;r_id__beta[23,Intercept]&quot; 
+##  [55] &quot;r_id__beta[24,Intercept]&quot;  &quot;prior_b_alpha_Intercept&quot;  
+##  [57] &quot;prior_b_alpha_dose_adj&quot;    &quot;prior_b_beta_Intercept&quot;   
+##  [59] &quot;prior_b_beta_dose_adj&quot;     &quot;prior_sigma&quot;              
+##  [61] &quot;prior_sd_id&quot;               &quot;prior_sd_id__1&quot;           
+##  [63] &quot;lprior&quot;                    &quot;lp__&quot;                     
+##  [65] &quot;z_1[1,1]&quot;                  &quot;z_1[1,2]&quot;                 
+##  [67] &quot;z_1[1,3]&quot;                  &quot;z_1[1,4]&quot;                 
+##  [69] &quot;z_1[1,5]&quot;                  &quot;z_1[1,6]&quot;                 
+##  [71] &quot;z_1[1,7]&quot;                  &quot;z_1[1,8]&quot;                 
+##  [73] &quot;z_1[1,9]&quot;                  &quot;z_1[1,10]&quot;                
+##  [75] &quot;z_1[1,11]&quot;                 &quot;z_1[1,12]&quot;                
+##  [77] &quot;z_1[1,13]&quot;                 &quot;z_1[1,14]&quot;                
+##  [79] &quot;z_1[1,15]&quot;                 &quot;z_1[1,16]&quot;                
+##  [81] &quot;z_1[1,17]&quot;                 &quot;z_1[1,18]&quot;                
+##  [83] &quot;z_1[1,19]&quot;                 &quot;z_1[1,20]&quot;                
+##  [85] &quot;z_1[1,21]&quot;                 &quot;z_1[1,22]&quot;                
+##  [87] &quot;z_1[1,23]&quot;                 &quot;z_1[1,24]&quot;                
+##  [89] &quot;z_2[1,1]&quot;                  &quot;z_2[1,2]&quot;                 
+##  [91] &quot;z_2[1,3]&quot;                  &quot;z_2[1,4]&quot;                 
+##  [93] &quot;z_2[1,5]&quot;                  &quot;z_2[1,6]&quot;                 
+##  [95] &quot;z_2[1,7]&quot;                  &quot;z_2[1,8]&quot;                 
+##  [97] &quot;z_2[1,9]&quot;                  &quot;z_2[1,10]&quot;                
+##  [99] &quot;z_2[1,11]&quot;                 &quot;z_2[1,12]&quot;                
+## [101] &quot;z_2[1,13]&quot;                 &quot;z_2[1,14]&quot;                
+## [103] &quot;z_2[1,15]&quot;                 &quot;z_2[1,16]&quot;                
+## [105] &quot;z_2[1,17]&quot;                 &quot;z_2[1,18]&quot;                
+## [107] &quot;z_2[1,19]&quot;                 &quot;z_2[1,20]&quot;                
+## [109] &quot;z_2[1,21]&quot;                 &quot;z_2[1,22]&quot;                
+## [111] &quot;z_2[1,23]&quot;                 &quot;z_2[1,24]&quot;                
+## [113] &quot;.chain&quot;                    &quot;.iteration&quot;               
+## [115] &quot;.draw&quot;</code></pre>
+<p>To compare directly, this is the model we want:</p>
+<p><span class="math display">\[
+\begin{aligned}
+Y_{i,t}  &amp; \sim \mathrm{Normal}\left(\mu_{i,t}, \sigma\right) \\
+\mu_{i,t} &amp;  =  \exp(\alpha_{i}) \log (t_{i}) -\exp(\beta_{i}) t_{i} \\
+\alpha_{i} &amp;  =  a_{0,i} + a_1 \left(\log (D_i) - \log (D_m)\right)  \\
+\beta_{i} &amp;  =  b_{0,i} + b_1 \left(\log (D_i) - \log (D_m)\right) \\
+a_{0,i} &amp; \sim \mathrm{Normal}(\mu_a, \sigma_a) \\
+b_{0,i} &amp; \sim \mathrm{Normal}(\mu_b, \sigma_a) \\
+a_1 &amp; \sim \mathrm{Normal}(0.3, 1) \\
+b_1 &amp; \sim \mathrm{Normal}(-0.3, 1) \\
+\mu_a &amp; \sim \mathrm{Normal}(2, 1) \\
+\mu_b &amp; \sim \mathrm{Normal}(0.5, 1) \\
+\sigma &amp;  \sim \mathrm{HalfCauchy}(0,1)  \\
+\sigma_a &amp; \sim \mathrm{HalfCauchy}(0,1)  \\
+\sigma_b &amp; \sim \mathrm{HalfCauchy}(0,1)  
+\end{aligned}
+\]</span></p>
+<p>If understand <code>brms</code> correctly, those <code>z_</code> parameters are internal adjustments to make things more efficient and can otherwise be ignored. That means we have 2 times 24 parameters for the individual levels that all start with <code>r_id</code>. Those correspond to the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,1}\)</span>, and they don’t have pre-defined priors, since they are computed based on other parameters. Then we have 2 dose parameters, which map to <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>, both come with priors. We have 2 <code>_Intercept</code> parameters, which correspond to <span class="math inline">\(\mu_a\)</span> and <span class="math inline">\(\mu_b\)</span>, again with priors. We have <span class="math inline">\(\sigma\)</span> with prior, and the two <code>sd_id</code> parameters seem to be those we call <span class="math inline">\(\sigma_a\)</span> and <span class="math inline">\(\sigma_b\)</span> in our equations.</p>
+<p>So it looks like there is a match between our mathematical model we want, and the way we implemented it in <code>brms</code>. Still, I find the <code>brms</code> notation confusing and not that easy to follow. In that respect I much prefer <code>ulam/rethinking</code>.</p>
+<p>In any case, I somewhat convinced myself that I’m fitting the same models here with <code>brms</code> that I’m fitting with <code>ulam</code> (which still leaves me confused about the differences in WAIC).</p>
 </div>
 </div>
 <div id="computing-predictions" class="section level1">

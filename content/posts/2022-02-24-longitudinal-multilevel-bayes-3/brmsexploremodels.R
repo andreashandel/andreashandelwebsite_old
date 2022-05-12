@@ -43,7 +43,8 @@ plot(fit2)
 
 ## ---- traceplot-2 ------
 # Another trace plot, using the bayesplot package
-bayesplot::mcmc_trace(fit2,  n_warmup = 400, pars = variables(fit2)[c(1,2,3,4,5)])
+posterior <- rstan::extract(fit2$fit, inc_warmup = TRUE, permuted = FALSE)
+bayesplot::mcmc_trace(posterior, n_warmup = 400, pars = variables(fit2)[c(1,2,3,4,5)])
 
 ## ---- trankplot ------
 # Model 2a trank plots with bayesplot
@@ -125,10 +126,13 @@ pairs(fit1, variable = variables(fit1)[c(16:19,25)])
 ## ---- mod_1_3_pars --------
 # model 1 first
 fit1pars = posterior::summarize_draws(m1post, "mean", "sd", "quantile2", default_convergence_measures())
-fit1a0mean <- fit1pars %>% dplyr::filter(grepl('alpha_id',variable)) %>%
-  summarize(mean = mean(mean))
-fit1b0mean <- fit1pars %>% dplyr::filter(grepl('beta_id',variable)) %>%
-  summarize(mean = mean(mean))
+
+#only entries for the a0 parameters
+a0post <- m1post %>% dplyr::select(starts_with('b_alpha_id'))
+fit1a0mean <- mean(colMeans(a0post))
+#only entries for the b0 parameters
+b0post <- m1post %>% dplyr::select(starts_with('b_beta_id'))
+fit1b0mean <- mean(colMeans(b0post))
 fit1otherpars <- fit1pars %>% dplyr::filter(!grepl('_id',variable)) %>%
   dplyr::filter(!grepl('prior',variable))
 print(fit1otherpars)
@@ -136,12 +140,14 @@ print(c(fit1a0mean,fit1b0mean))
 
 # repeat for model 3
 fit3pars = posterior::summarize_draws(m3post, "mean", "sd", "quantile2", default_convergence_measures())
-fit3a0mean <- fit3pars %>% dplyr::filter(grepl('alpha_id',variable)) %>%
-                   summarize(mean = mean(mean))
-fit3b0mean <- fit3pars %>% dplyr::filter(grepl('beta_id',variable)) %>%
-                   summarize(mean = mean(mean))
+#only entries for the a0 parameters
+a0post <- m3post %>% dplyr::select(starts_with('b_alpha_id'))
+fit3a0mean <- mean(colMeans(a0post))
+#only entries for the b0 parameters
+b0post <- m3post %>% dplyr::select(starts_with('b_beta_id'))
+fit3b0mean <- mean(colMeans(b0post))
 fit3otherpars <- fit3pars %>% dplyr::filter(!grepl('_id',variable)) %>%
-                      dplyr::filter(!grepl('prior',variable))
+  dplyr::filter(!grepl('prior',variable))
 print(fit3otherpars)
 print(c(fit3a0mean,fit3b0mean))
 
@@ -180,9 +186,9 @@ m4df <- data.frame(a1_prior = m4prior$b_alpha_dose_adj,
 # make plot
 p1 <- m4df %>%
   ggplot() +
-  geom_density(aes(x = value, color = parameter, linetype = type), size = 1) +
+  ylim(0, 10) + xlim(-2, 2) +
+  geom_density(aes(x = value, color = parameter, linetype = type), adjust = 10, size = 1) +
   ggtitle('model 4, parameters a1 and b1') +
-  ylim(0, 10) +
   theme_minimal()
 plot(p1)
 
@@ -190,7 +196,9 @@ plot(p1)
 ## ---- mod_4_pars --------
 fit4pars = posterior::summarize_draws(m4post, "mean", "sd", "quantile2", default_convergence_measures())
 fit4otherpars <- fit4pars %>% dplyr::filter(!grepl('_id',variable)) %>%
-  dplyr::filter(!grepl('prior',variable))
+  dplyr::filter(!grepl('prior',variable)) %>%
+  dplyr::filter(!grepl('z_',variable))
+
 print(fit4otherpars)
 
 
@@ -208,12 +216,14 @@ pairs(fit4, variable = variables(fit4)[c(16:19,25)])
 
 
 ## ---- mod_all_comparison --------
-compall <- loo_compare(add_criterion(fit1,"waic"),
-                    add_criterion(fit2,"waic"),
-                    add_criterion(fit3,"waic"),
-                    add_criterion(fit4,"waic"),
-                    criterion = "waic")
-print(compall, simplify = FALSE)
+fit1a <- add_criterion(fit1,c("waic","loo"))
+fit2a <- add_criterion(fit2,c("waic","loo"))
+fit3a <- add_criterion(fit3,c("waic","loo"))
+fit4a <- add_criterion(fit4,c("waic","loo"))
+compall1 <- loo_compare(fit1a,fit2a,fit3a,fit4a, criterion = "waic")
+compall2 <- loo_compare(fit1a,fit2a,fit3a,fit4a, criterion = "loo")
+print(compall1, simplify = FALSE)
+print(compall2, simplify = FALSE)
 
 
 
@@ -235,8 +245,15 @@ postprior3 <- prior_summary(fit3)
 postprior4 <- prior_summary(fit4)
 print(paste(nrow(postprior1),nrow(postprior3),nrow(postprior4)))
 
+
 ## ---- priorexploration-3 --------
+names(m1post)
+
+## ---- priorexploration-4 --------
 print(postprior4)
+
+## ---- priorexploration-5 --------
+names(m4post)
 
 
 ## ---- computepredictions --------
