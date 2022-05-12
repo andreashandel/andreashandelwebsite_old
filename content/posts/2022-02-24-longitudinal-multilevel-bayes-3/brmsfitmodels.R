@@ -31,7 +31,7 @@ fitdat=list(id = as.factor(simdat[[3]]$id),
 #separate intercept for each individual/id
 #2x(N+1)+1 parameters
 m1eqs <- bf(  #main equation for time-series trajectory
-          outcome ~ exp(alpha)*log(time) - exp(beta)*time,
+          outcome ~  exp(alpha)*log(time) - exp(beta)*time,
           #equations for alpha and beta
           alpha ~ 0 + id + dose_adj,
           beta  ~ 0 + id + dose_adj,
@@ -109,10 +109,10 @@ fl = vector(mode = "list", length = length(modellist))
 ## ---- fittingsetup --------
 #general settings for fitting
 #you might want to adjust based on your computer
-warmup = 4000
+warmup = 6000
 iter = warmup + floor(warmup/2)
-max_td = 15 #tree depth
-adapt_delta = 0.999
+max_td = 18 #tree depth
+adapt_delta = 0.9999
 chains = 5
 cores  = chains
 seed = 1234
@@ -132,10 +132,11 @@ startm4 = list(mu_a = 2, sigma_a = 1, mu_b = 0, sigma_b = 1, a1 = 0.5 , b1 = -0.
 #put different starting values in list
 #need to be in same order as models below
 #one list for each chain, thus a 3-leveled list structure
-startlist = list( rep(list(startm1),chains),
-                  rep(list(startm2a),chains),
-                  rep(list(startm3),chains),
-                  rep(list(startm4),chains)
+#for each chain, we add jitter so they start at different values
+startlist = list( rep(list(lapply(startm1,jitter,10)),chains),
+                  rep(list(lapply(startm2a,jitter,10)),chains),
+                  rep(list(lapply(startm3,jitter,10)),chains),
+                  rep(list(lapply(startm4,jitter,10)),chains)
                   )
 
 
@@ -156,6 +157,7 @@ for (n in 1:length(modellist))
                    prior = priorlist[[n]],
                    init = startlist[[n]],
                    control=list(adapt_delta=adapt_delta, max_treedepth = max_td),
+                   sample_prior = TRUE,
                    chains=chains, cores = cores,
                    warmup = warmup, iter = iter,
                    seed = seed,
@@ -180,6 +182,8 @@ saveRDS(fl,filepath)
 ## ---- additional-code -------
 for (n in 1:length(fl)) {print(fl[[n]]$runtime)}
 
+preprior1 <- get_prior(m1eqs,data=fitdat,family=gaussian())
+preprior2 <- get_prior(m1eqs,data=fitdat,family=gaussian())
 
 
 

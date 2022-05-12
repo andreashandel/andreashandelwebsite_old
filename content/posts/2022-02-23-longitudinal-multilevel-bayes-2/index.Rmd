@@ -261,7 +261,7 @@ Again, note that the only thing we changed between models 1 and 3 are to make th
 
 ## Comparing model estimates with the truth
 
-We know the "truth" here, i.e., the actual values of the parameters which we used to created the simulated data. To generate the data, we used these parameter values: $\sigma =$ `r simdat$m3pars['sigma']`, $\mu_a =$ `r pars['a0_mu']`, $\mu_b =$ `r pars['b0_mu']`, $a_1 =$ `r pars['a1']`, $b_1 =$ `r pars['b1']`. We also said that our main scientific question is if there is a dose effect, i.e. non-zero $a_1$ and $b_1$. 
+We know the "truth" here, i.e., the actual values of the parameters which we used to created the simulated data. To generate the data, we used these parameter values: $\sigma =$ `r pars['sigma']`, $\mu_a =$ `r pars['a0_mu']`, $\mu_b =$ `r pars['b0_mu']`, $a_1 =$ `r pars['a1']`, $b_1 =$ `r pars['b1']`. We also said that our main scientific question is if there is a dose effect, i.e. non-zero $a_1$ and $b_1$. 
 
 The models find estimates of $\mu_a$, $\mu_b$  and $\sigma$ that are close to what we used. The estimates for $a_1$ and $b_1$ are not that great. That's especially true for model 1. With these models, we aren't able to convincingly recover the parameters used to generate the data. I'm not sure if increasing the sampling (longer or more chains) would help. Both models, especially model 1, already took quite a while to run. Thus I'm not too keen to try it with even more samples. As we'll see below, alternative models do better.
 

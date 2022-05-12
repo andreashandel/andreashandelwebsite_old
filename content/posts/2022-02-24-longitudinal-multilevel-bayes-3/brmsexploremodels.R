@@ -4,79 +4,239 @@
 
 ## ---- packages2 --------
 library('dplyr') # for data manipulation
+library('tidyr') # for data manipulation
 library('ggplot2') # for plotting
 library('cmdstanr') #for model fitting
 library('brms') # for model fitting
 library('posterior') #for post-processing
+library('bayesplot') #for plots
 library('fs') #for file path
 
 
 ## ---- loadfits --------
-#loading previously saved fits.
-#useful if we don't want to re-fit each time
-#we want to explore the results.
+# loading list of previously saved fits.
+# useful if we don't want to re-fit
+# every time we want to explore the results.
+# since the file is too large for GitHub
+# it is stored in a local folder
+# adjust accordingly for your setup
 filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","brmsfits", ext="Rds")
 fl <- readRDS(filepath)
+# also load data file used for fitting
+simdat <- readRDS("simdat.Rds")
+#pull our the data set we used for fitting
+#if you fit a different one of the simulated datasets, change accordingly
+fitdat <- simdat$m3
+#contains parameters used for fitting
+pars <- simdat$m3pars
+
+
+## ---- diagnostics ------
+# Model 2a summary
+#saving a bit of typing below
+fit2 <- fl[[2]]$fit
+summary(fit2)
+
+## ---- traceplot ------
+# Model 2a trace plots
+plot(fit2)
+
+## ---- traceplot-2 ------
+# Another trace plot, using the bayesplot package
+bayesplot::mcmc_trace(fit2,  n_warmup = 400, pars = variables(fit2)[c(1,2,3,4,5)])
+
+## ---- trankplot ------
+# Model 2a trank plots with bayesplot
+bayesplot::mcmc_rank_overlay(fit2, pars = variables(fit2)[c(1,2,3,4,5)])
+
+## ---- autocorrelationplot -----
+bayesplot::mcmc_acf(fit2, pars = variables(fit2)[c(1,2,3,4,5)])
+
+
+## ---- pairplot ------
+# Model 2a pair plot
+# Correlation between posterior samples of parameters
+pairs(fit2)
+
+
+## ---- mod_1_3_summary --------
+#save some typing
+fit1 <- fl[[1]]$fit
+fit3 <- fl[[3]]$fit
+summary(fit1)
+summary(fit3)
+
+
+## ---- mod_1_3_prior --------
+#get priors and posteriors for models 1 and 3
+m1prior <- prior_draws(fit1)
+m1post <- as_draws_df(fit1)
+m3prior <- prior_draws(fit3)
+m3post <- as_draws_df(fit3)
+
+
+## ---- mod_1_3_prior_plots --------
+#showing density plots for a1
+
+#make a data frame and get it in shape for ggplot
+a1df <- data.frame(m1_prior = m1prior$b_alpha_dose_adj,
+                   m1_post = m1post$b_alpha_dose_adj,
+                   m3_prior = m3prior$b_alpha_dose_adj,
+                   m3_post =  m3post$b_alpha_dose_adj) %>%
+        pivot_longer(cols = everything(), names_to = c("model","type"), names_pattern = "(.*)_(.*)", values_to = "value")
+# make plot
+p1 <- a1df %>%
+  ggplot() +
+  geom_density(aes(x = value, color = model, linetype = type), size = 1) +
+  theme_minimal()
+plot(p1)
+#save for display on post
+ggsave(file = paste0("featured.png"), p1, dpi = 300, units = "in", width = 6, height = 6)
+
+
+#showing density plots for b1
+b1df <- data.frame(m1_prior = m1prior$b_beta_dose_adj,
+                   m1_post = m1post$b_beta_dose_adj,
+                   m3_prior = m3prior$b_beta_dose_adj,
+                   m3_post =  m3post$b_beta_dose_adj) %>%
+  pivot_longer(cols = everything(), names_to = c("model","type"), names_pattern = "(.*)_(.*)", values_to = "value")
+
+p2 <- b1df %>%
+  ggplot() +
+  geom_density(aes(x = value, color = model, linetype = type), size = 1) +
+  theme_minimal()
+plot(p2)
 
 
 
-## ---- mod_1_3_exploration --------
+## ---- mod_1_3_pair_plots --------
+# a few parameters for each dose
+#low dose
+pairs(fit1, variable = variables(fit1)[c(1:4,25)])
+#medium dose
+pairs(fit1, variable = variables(fit1)[c(8:11,25)])
+#high dose
+pairs(fit1, variable = variables(fit1)[c(16:19,25)])
+
+
+
+
+
+## ---- mod_1_3_pars --------
 # model 1 first
-draws <- posterior::as_draws_array(fl[[1]]$fit)
-pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
-a0mean <- pars %>% dplyr::filter(grepl('alpha_id',variable)) %>% summarize(mean = mean(mean))
-b0mean <- pars %>% dplyr::filter(grepl('beta_id',variable)) %>% summarize(mean = mean(mean))
-otherpars <- pars %>% dplyr::filter(!grepl('_id',variable))
-print(otherpars)
-print(c(a0mean,b0mean))
+fit1pars = posterior::summarize_draws(m1post, "mean", "sd", "quantile2", default_convergence_measures())
+fit1a0mean <- fit1pars %>% dplyr::filter(grepl('alpha_id',variable)) %>%
+  summarize(mean = mean(mean))
+fit1b0mean <- fit1pars %>% dplyr::filter(grepl('beta_id',variable)) %>%
+  summarize(mean = mean(mean))
+fit1otherpars <- fit1pars %>% dplyr::filter(!grepl('_id',variable)) %>%
+  dplyr::filter(!grepl('prior',variable))
+print(fit1otherpars)
+print(c(fit1a0mean,fit1b0mean))
 
 # repeat for model 3
-draws <- posterior::as_draws_array(fl[[3]]$fit)
-pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
-a0mean <- pars %>% dplyr::filter(grepl('alpha_id',variable)) %>% summarize(mean = mean(mean))
-b0mean <- pars %>% dplyr::filter(grepl('beta_id',variable)) %>% summarize(mean = mean(mean))
-otherpars <- pars %>% dplyr::filter(!grepl('_id',variable))
-print(otherpars)
-print(c(a0mean,b0mean))
+fit3pars = posterior::summarize_draws(m3post, "mean", "sd", "quantile2", default_convergence_measures())
+fit3a0mean <- fit3pars %>% dplyr::filter(grepl('alpha_id',variable)) %>%
+                   summarize(mean = mean(mean))
+fit3b0mean <- fit3pars %>% dplyr::filter(grepl('beta_id',variable)) %>%
+                   summarize(mean = mean(mean))
+fit3otherpars <- fit3pars %>% dplyr::filter(!grepl('_id',variable)) %>%
+                      dplyr::filter(!grepl('prior',variable))
+print(fit3otherpars)
+print(c(fit3a0mean,fit3b0mean))
 
 
 ## ---- mod_1_3_comparison --------
-comp <- loo_compare(add_criterion(fl[[1]]$fit,"waic"),
-            add_criterion(fl[[3]]$fit,"waic"),
+fit13comp <- loo_compare(add_criterion(fit1,"waic"),
+            add_criterion(fit3,"waic"),
             criterion = "waic")
-print(comp, simplify = FALSE)
+print(fit13comp, simplify = FALSE)
 
 
 ## ---- mod_2a_exploration --------
-draws <- posterior::as_draws_array(fl[[2]]$fit)
-pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
-print(pars)
+m2post <- as_draws_df(fit2)
+fit2pars = posterior::summarize_draws(m2post, "mean", "sd", "quantile2", default_convergence_measures())
+fit2otherpars <- fit2pars %>% dplyr::filter(!grepl('prior',variable))
+print(fit2otherpars)
 
 
 
 ## ---- mod_4_exploration --------
-draws <- posterior::as_draws_array(fl[[4]]$fit)
-pars = posterior::summarize_draws(draws, default_summary_measures(), default_convergence_measures())
-print(pars)
+fit4 <- fl[[4]]$fit
+m4prior <- prior_draws(fit4)
+m4post <- as_draws_df(fit4)
+summary(fit4)
+
+
+
+## ---- mod_4_prior_plots --------
+#showing density plots for a1 and b1
+#make a data frame and get it in shape for ggplot
+m4df <- data.frame(a1_prior = m4prior$b_alpha_dose_adj,
+                   a1_post = m4post$b_alpha_dose_adj,
+                   b1_prior = m4prior$b_beta_dose_adj,
+                   b1_post = m4post$b_beta_dose_adj) %>%
+  pivot_longer(cols = everything(), names_to = c("parameter","type"), names_pattern = "(.*)_(.*)", values_to = "value")
+# make plot
+p1 <- m4df %>%
+  ggplot() +
+  geom_density(aes(x = value, color = parameter, linetype = type), size = 1) +
+  ggtitle('model 4, parameters a1 and b1') +
+  ylim(0, 10) +
+  theme_minimal()
+plot(p1)
+
+
+## ---- mod_4_pars --------
+fit4pars = posterior::summarize_draws(m4post, "mean", "sd", "quantile2", default_convergence_measures())
+fit4otherpars <- fit4pars %>% dplyr::filter(!grepl('_id',variable)) %>%
+  dplyr::filter(!grepl('prior',variable))
+print(fit4otherpars)
+
+
+
+## ---- mod_4_pair_plots --------
+# a few parameters for each dose
+#low dose
+pairs(fit4, variable = variables(fit4)[c(1:4,25)])
+#medium dose
+pairs(fit4, variable = variables(fit4)[c(8:11,25)])
+#high dose
+pairs(fit4, variable = variables(fit4)[c(16:19,25)])
+
 
 
 
 ## ---- mod_all_comparison --------
-comp <- loo_compare(add_criterion(fl[[1]]$fit,"waic"),
-                    add_criterion(fl[[3]]$fit,"waic"),
-                    add_criterion(fl[[2]]$fit,"waic"),
-                    add_criterion(fl[[4]]$fit,"waic"),
+compall <- loo_compare(add_criterion(fit1,"waic"),
+                    add_criterion(fit2,"waic"),
+                    add_criterion(fit3,"waic"),
+                    add_criterion(fit4,"waic"),
                     criterion = "waic")
-print(comp, simplify = FALSE)
+print(compall, simplify = FALSE)
 
 
 
-## ---- priorexploration --------
-preprior <- get_prior(m1eqs,data=fitdat,family=gaussian())
-postprior <- prior_summary(fl[[2]]$fit)
-print(preprior)
-print(postprior)
+## ---- priorexploration-1 --------
+#defining model again
+m2aeqs <- bf(outcome ~ exp(alpha)*log(time) - exp(beta)*time,
+  alpha ~ 1 + dose_adj,
+  beta  ~  1 + dose_adj,
+  nl = TRUE)
+preprior2 <- get_prior(m2aeqs,data=fitdat,family=gaussian())
+postprior2 <- prior_summary(fit2)
+print(preprior2)
+print(postprior2)
 
+
+## ---- priorexploration-2 --------
+postprior1 <- prior_summary(fit1)
+postprior3 <- prior_summary(fit3)
+postprior4 <- prior_summary(fit4)
+print(paste(nrow(postprior1),nrow(postprior3),nrow(postprior4)))
+
+## ---- priorexploration-3 --------
+print(postprior4)
 
 
 ## ---- computepredictions --------

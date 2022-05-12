@@ -32,7 +32,7 @@ pars <- simdat$m3pars
 show(fl[[5]]$fit)
 
 ## ---- traceplot ------
-# Model 2a trace plots and trank plots
+# Model 2a trace plots
 traceplot(fl[[5]]$fit, pars = c("a0","b0","a1","b1","sigma"))
 
 ## ---- trankplot ------

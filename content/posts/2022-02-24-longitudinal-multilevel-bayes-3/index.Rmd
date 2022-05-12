@@ -39,11 +39,11 @@ I assume you've read both [part 1](/posts/longitudinal-multilevel-bayesian-analy
 
 # Introduction
 
-In the previous post, I showed how to fit the data using the `rethinking` package. Now I'm re-doing it using `brms`. The [`brms` package](https://paul-buerkner.github.io/brms/) is a widely used and very powerful tool to interface with Stan. It has overall more capabilities compared to `rethinking`. In my opinion, the main disadvantage is that it is often not as obvious how to go from mathematical model to code, unless one has a good bit of experience jumping between at times terse formula notation of `brms` and the model equations. I'm not there yet, so I currently prefer to start with `rethinking`. But since `brms` can do things that are not as easy (or impossible) with `rethinking`, it seems good to know how to use both.
+In the previous post, I showed how to fit the data using the `rethinking` package. Now I'm re-doing it using `brms`. The [`brms` package](https://paul-buerkner.github.io/brms/) is a widely used and very powerful tool to interface with Stan. It has overall more capabilities compared to `rethinking`. In my opinion, the main disadvantage is that it is often not obvious how to go from mathematical model to code, unless one has a good bit of experience jumping between the often terse formula notation of `brms` and the model equations. I'm not there yet, so I currently prefer to start with `rethinking`. But since `brms` can do things that are not as easy (or impossible) with `rethinking`, it seems good to know how to use both.
 
-Also, comparing results using two different numerical packages is always good (even though both use `Stan` underneath, so in some sense those are not truly independent implementations).
+Also, comparing results using two different numerical packages is always good (even though both use `Stan` underneath, so in some sense those are not truly independent software routines).
 
-Again as previously, because fitting the models can take a good bit of time, I wrote separate `R` scripts for the fitting and the exploring parts. The code chunks from those scripts are shown below. The manual effort and slower pace of copying and pasting the code chunks from this tutorial and re-produce them can help in learning, but if you just want to get all the code from this post you can find it [here](/posts/longitudinal-multilevel-bayesian-analysis-3/brmsfitmodels.R) and [here](/posts/longitudinal-multilevel-bayesian-analysis-3/brmsexploremodels.R).
+As was true for `ulam/rethinking`, fitting the models can take a good bit of time. I therefore wrote separate `R` scripts for the fitting and the exploring parts. The code chunks from those scripts are shown below. The manual effort and slower pace of copying and pasting the code chunks from this tutorial and re-produce them can help in learning, but if you just want to get all the code from this post you can find it [here](/posts/longitudinal-multilevel-bayesian-analysis-3/brmsfitmodels.R) and [here](/posts/longitudinal-multilevel-bayesian-analysis-3/brmsexploremodels.R).
 
 
 
@@ -68,21 +68,21 @@ We'll jump right in and load the data we generated in the previous tutorial.
 
 # Fitting with `brms`
 
-We'll fit the different models we discussed in [part 1](/posts/longitudinal-multilevel-bayesian-analysis-1/), now using the `brms` package. The main function in that package, which does the fitting using Stan, is `brm`. 
+We'll fit some of the models we discussed in parts 1 and 2, now using the `brms` package. The main function in that package, which does the fitting using Stan, is `brm`. 
 
 First, we'll specify each model. We'll do that first, then run them all in a single loop. 
-Since we determined when using `ulam`/`rethinking` that our model 2 was a bad model, and model 4 and 4a didn't lead to much of a difference, I'm skipping those here and only do models 1, 2a, 3 and 4.
+Since we determined when using `ulam`/`rethinking` that our model 2 was a bad model, and model 4 and 4a didn't lead to much of a difference, I'm skipping those here and only do models 1, 2a, 3 and 4. I'm also skipping model 5 since I only ran that for diagnostics/understanding and it doesn't encode the right structure, since dose effect is missing.
 
 
 ## Model 1
 
-The model with individual-level and dose-level effects, all priors fixed. This model has $2N+2+1$ parameters. $N$ each for the individual-level intercept for $\alpha$ and $\beta$, one dose-level parameter for each, and 1 overall deviation, $\sigma$ for the outcome distribution. 
+This is one of the models with individual-level and dose-level effects, all priors fixed. This model has $2N+2+1$ parameters. $N$ each for the individual-level intercepts for $\alpha$ and $\beta$ (the $a_{0,i}$ and $b_{0,i}$ parameters), the two dose-level parameters $a_1$ and $b_1$, and 1 overall deviation, $\sigma$ for the outcome distribution. 
 
 ```{r, model-1}
 ```
 
 
-Notice how this notation in `brms` looks quite a bit different than the mathematical equations or the `ulam` implementation. That's a part I don't particularly like about `brms`, the very condensed formula notation. It takes time getting used to and it always requires extra checking to ensure the model implemented in code corresponds to the mathematical model. One can check by looking at the priors and make sure they look as expected. We'll do that below after we fit.
+Notice how this notation in `brms` looks quite a bit different from the mathematical equations or the `ulam` implementation. That's a part I don't particularly like about `brms`, the very condensed formula notation. It takes time getting used to and it always requires extra checking to ensure the model implemented in code corresponds to the mathematical model. One can check by looking at the priors and make sure they look as expected. We'll do that below after we fit.
 
 ## Model 2a 
 
@@ -130,9 +130,12 @@ We define some general values for the fitting. Since the starting values depend 
 
 ## Setting starting values
 
-We'll again set starting values, as we did for `ulam/rethinking`.
+We'll again set starting values, as we did for `ulam/rethinking`. 
 Note that `brms` needs them in a somewhat different form, namely as list of lists for each model, one list for each chain.
-Ideally, one should set different values for each chain, and then check that each chain ends up at the same posterior. For simplicity, I'm not doing that here but instead I'm starting each chain with the same value.
+
+I set different values for each chain, so I can check that each chain ends up at the same posterior. This is inspired by [this post by Solomon Kurz](https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/), though I keep it simpler and just use the `jitter` function.
+
+Note that this approach not only jitters (adds noise/variation) between chains, but also between the individual-level parameters for each chain. That's fine for our purpose, it might even be beneficial.
 
 ```{r, startvalues}
 ```
@@ -142,7 +145,7 @@ Ideally, one should set different values for each chain, and then check that eac
 ## Model fitting
 
 We'll use the same strategy to loop though all models and fit them. 
-The fitting code is pretty much the same as the previous one for `rethinking/ulam`, only now the fitting is done calling the `brm`.
+The fitting code looks very similar to the previous one for `rethinking/ulam`, only now the fitting is done calling the `brm` function.
 
 ```{r, modelfitting, eval = FALSE}
 ```
@@ -152,59 +155,166 @@ You'll likely find that model 1 takes the longest, the other ones run faster. Yo
 
 # Explore model fits
 
+As before, fits are in the list called `fl`. For each model the actual fit is in `fit`, the model name is in `model` and the run time is in `runtime`. Note that the code chunks below come from [this second R script](/posts/longitudinal-multilevel-bayesian-analysis-3/brmsexploremodels.R), thus some things are repeated (e.g., loading of simulated data).
+
+As we did after fitting with `ulam/rethinking`, let's briefly inspect some of the models. I'm again only showing a few of those explorations to illustrate what I mean. For any real fitting, it is important to carefully look at all the output and make sure everything worked as expected and makes sense.
+
+I'm again focusing on the simple model 2a, which has no individual-level parameters, thus only a total of 5. 
+
+We are using various additional packages here to get plots and output that looks similar to what `rethinking` produces. I'm getting most of the code snippets from the [Statistical Rethinking using `brms` book](https://bookdown.org/content/4857/) by Solomon Kurz.
+
+Need a few more packages for this part:
+
+```{r, packages2, message = FALSE}
+```
+
+Loading the data:
+
 ```{r, loadfits}
 ```
 
-As was the case for `ulam/rethinking`, you can inspect the model fits by looking at traceplots using the `plot` function. You also get useful information using `summary`, e.g. `summary(fl[[1]]$fit)`. Again, explore your model fits carefully. Since those functions produce a lot of output, I'm skipping them again and go straight to something that produces outputs similar to those we got using the `precis` function in `rethinking`. 
+The summary output looks a bit different compared to `ulam`, but fairly similar.
 
-We are using the `posterior` package for this, which is used to process results (i.e., posterior distributions) of a `brms` fit model. The `posterior` package replaces functionality that used to be part of `brms`, e.g., the `posterior_summary()` and `posterior_samples()` functions.
+```{r, diagnostics}
+```
+
+Here is the default trace plot. Note that `brms` only plots the post-warmup iterations, and also shows the posterior distributions. 
+
+```{r, traceplot}
+```
+
+Since I want to see if the different initial conditions did something useful, I was trying to make a trace plot that shows warmup. Solomon Kurz has examples, but his code just doesn't work for me, it always ignores the warmup. So this following plot doesn't show yet what I want. It's another trace plot using the `bayesplot` package - which has an example of making the plot I want, but only for an `rstan` output object, and I don't know how to get the warmups out of the `brmsfit` object. So for now, what's shown doesn't actually include the warmups. Leaving this plot for now and moving on...
+
+```{r, traceplot-2}
+```
+
+Here is a version of the trank plots. I'm pulling out the first 5 variables since the others are not that interesting for this plot, e.g., they contain prior samples. You can look at them if you want.
+
+```{r, trankplot}
+```
+
+Another nice plot I saw was an autocorrelation plot. One wants little autocorrelation for parameters. This seems to be the case:
+
+```{r, autocorrelationplot}
+```
+
+
+And finally a pair plot.
+
+```{r, pairplot}
+```
+
+
+While the layout looks different - and I didn't bother to try and make things look exactly the same between `brms` and `rethinking` - the overall results are similar. That's encouraging.
+
+Some of the plots already showed posterior distributions, but let's look at those more carefully.
+
+
+
+
 
 ## Models 1 and 3
 
-Those are the same models, just with different priors. So we should expect the posterior to be similar.
+Let's explore those two models first. Recall that they are the same, apart from the prior definitions. As previously, the wider priors for model 1 make it less efficient. With the settings I used, run times were `r round(fl[[1]]$runtime,0)` minutes for model 1 versus `r round(fl[[3]]$runtime,0)` minutes for model 3. 
 
-```{r mod_1_3_exploration}
+Let's see if the priors impact the results, i.e. the posterior distributions.
+We can actually do that by looking briefly at the summaries for both fits.
+
+
+```{r mod_1_3_summary, message = FALSE}
 ```
 
-Note the different naming of the parameters in `brms`. It's unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have `dose` in their names are the ones we called $a_1$ and $b_1$ in our models. You can ignore the other entries. 
+Note the different naming of the parameters in `brms`. It's unfortunately not possible (as far as I know) to get the names match the mathematical model. The parameters that have `dose` in their names are the ones we called $a_1$ and $b_1$ in our models. The many `_id` parameters are our previous $a_0$ and $b_0$ parameters. Conceptually, they are on the individual level. But we don't have a nested/multi-level structure here, which seems to lead `brms` to consider every parameter on the same level, and thus labeling them all _population level_. 
 
-Some of the R-hat values for model 1 are not at 1, and the ESS (the effective sample size) is small. Model 1 also took long to run. That all indicates that the priors for model 3 are better.
+Some of the R-hat values for model 1 are not at 1, and the ESS (the effective sample size) is small. Model 1 also took longer to run. That all indicates that the priors for model 3 are better.
+
+
+
+Now, let's look at priors and posteriors somewhat more. First, we extract priors and posteriors. 
+
+```{r mod_1_3_prior, message = FALSE}
+```
+
+Now we can plot the distributions. I'm focusing on the $a1$ and $b1$ parameters since those are of more interest, and because I couldn't figure out quickly how to get out and process all the individual level $a_0$ and $b_0$ parameters from `brms` `r emoji::emoji('grin')`.
+
+```{r mod_1_3_prior_plots, message = FALSE}
+```
+
+As before, the priors for the $a_1$ and $b_1$ parameters are the same. We only changed the $a_0$ and $b_0$ priors, but that change leads to different posteriors for $a_1$ and $b_1$. It's basically the same result we found with `ulam/rethinking`.
+
+It would be surprising if we did NOT find the same correlation structure again in the parameters, let's check it.
+
+```{r mod_1_3_pair_plots, message = FALSE}
+```
+
+Apart from the unfortunate naming of parameters in `brms`, these are the same plots as we made for the `ulam` fits and show the same patterns.
+
+
+Let's look at the posteriors in numerical form.
+
+```{r mod_1_3_pars}
+```
+
+Again, model 1 seems worse, with higher uncertainty intervals.
 
 We can also compare the models as we did for `rethinking` using these lines of code:
 
 ```{r mod_1_3_comparison}
 ```
 
-We find that as for the `ulam` fits, the estimates for $a_0$, $b_0$ and $\sigma$ are similar, but that's not the case for $a_1$ and $b_1$. The $b_1$ estimates are similar to those for `ulam` model 3, and not close to the true value. I'm not really sure what to make of that. 
-
+Model performance is similar between models.
 
 
 ## Comparison with the truth and `ulam`
 
+The values used to generate the data are: $\sigma =$ `r pars['sigma']`, $\mu_a =$ `r pars['a0_mu']`, $\mu_b =$ `r pars['b0_mu']`, $a_1 =$ `r pars['a1']`, $b_1 =$ `r pars['b1']`. 
+
 Since the models are the same as those we previously fit with `ulam`, only a different `R` package is used to run them, we should expect very similar results. That is indeed what we find, the parameter estimates are very similar. The same holds for model performance as measured by WAIC. 
+
+
 
 That's good, because we should expect that if we fit the same models, results should - up to numerical/sampling differences - be the same, no matter what software implementation we use. It also suggests that we did things right - or made the same mistake in both implementations! `r emoji::emoji('grin')`.
 
+We find that as for the `ulam` fits, the estimates for $a_0$, $b_0$ and $\sigma$ are similar to the values used the generate the data, but estimates for $a_1$ and $b_1$ are not that great.
 
 
 ## Model 2a
 
-This is the model with only population-level estimates.
+This is the model with only population-level estimates. We already explored it somewhat above when we looked at traceplots and trankplots and the like. 
+Here is just another quick table for the posteriors.
 
 ```{r mod_2a_exploration}
 ```
 
-The parameters that have `_Intercept` in their name are what we called $\mu_a$ and $\mu_b$, the onse containing `_dose` are our $a_1$ and $b_1$. We find pretty much the same results we found using `ulam`.
+The parameters that have `_Intercept` in their name are what we called $\mu_a$ and $\mu_b$, the ones containing `_dose` are our $a_1$ and $b_1$. We find pretty much the same results we found using `ulam`.
 
 
 ## Model 4
 
+This is what I consider the most interesting and conceptually best model. It performed best in the `ulam` fits. Let's see how it looks here. 
+
+We'll start with the summary for the model.
 
 ```{r mod_4_exploration}
 ```
 
+Next, the prior/posterior plots.
+
+```{r mod_4_prior_plots}
+```
+
+Numerical output for the posterior:
+
+```{r mod_4_pars}
+```
+
+Finishing with the pairs lots:
 
 
+```{r mod_4_pair_plots}
+```
+
+As was the case for the `ulam` fits, model 4 seems to perform overall best.
 
 ## Comparing all models
 
@@ -218,13 +328,24 @@ We can repeat the model comparison we did above, now including all 4 models.
 
 ## Prior exploration
 
-Since `brms` has a way of specifying the model and priors that makes direct mapping to the mathematical model a bit more opaque, it is useful to explore if the models we run are what we think we run. `brms` as two helpful functions for looking at priors. One can help set priors before fitting, the other shows priors after fitting. 
-To make the output managable, we look at the simplest model, model 2. This looks as follows
+Since `brms` has a way of specifying the model and priors that makes direct mapping to the mathematical model a bit more opaque, it is useful to explore if the models we run are what we think we run. `brms` has two helpful functions for looking at priors. One can help set priors before fitting, the other shows priors after fitting. 
+To make the output manageable, we look at the simplest model, model 2. This looks as follows
 
-```{r priorexploration}
+```{r priorexploration-1}
 ```
 
-The first output shows the priors as the model sees them, before we apply any settings. It uses defaults. The second output shows the actual priors used when fitting the model, which are the ones we set. 
+The first output shows the priors as the model sees them, before we apply any settings. It uses defaults. The second output shows the actual priors used when fitting the model, which are the ones we set. I find these functions and the information useful, but overall it's still a bit confusing to me. For instance why are there those `flat` entries in there? I don't know what they mean.
+
+It gets worse for bigger models, and here things get confusing to me. This is looking at the priors for models 1,3 and 4. Recall that we expect $2(N+1)+1$ priors for models 1 and 3, and $2(N+1+1)+1$ for model 4. Since our data has `r Ntot` samples, we should find `r 2*(Ntot+1)+1` and `r 2*(Ntot+2)+1` priors. 
+Here is what we get:
+
+```{r priorexploration-2}
+```
+
+Closer inspection shows that for models 1 and 3, the priors include those strange ones that only have a class but no coefficient. My guess is those are not "real", and thus we actually have the right number of priors/parameters. But model 4 is confusing, I'm not sure how to interpret this. Here is the full list of priors:
+
+```{r priorexploration-3}
+```
 
 
 # Computing predictions
