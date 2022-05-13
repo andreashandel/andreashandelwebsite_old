@@ -39,11 +39,12 @@ predfunction <- function(fl,fitdat)
                           dose_cat2 = 0
     )
     #add right dose information for each individual
+    #this could likely be coded better
     for (k in 1:Ntot)
     {
       #get actual dose for a given individual
       #assign that dose
-      #need the if statements because not every data set has each dose
+      #if statements because not every data set/model has each dose type
       if ("dose" %in% names(fitdat)) {
         nowdose = unique(fitdat$dose[fitdat$id == k])
         preddat[(preddat$id == k),"dose"] = nowdose
@@ -207,8 +208,8 @@ filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_alt
 fl <- readRDS(filepath)
 fitdat <- fl[[1]]$fit@data
 
-## ---- explore_altpos_m3 --------
-#Model 3
+## ---- explore_altpos_m4a --------
+#Model 4a
 a0mean = mean(precis(fl[[1]]$fit,depth=2,"a0")$mean)
 b0mean = mean(precis(fl[[1]]$fit,depth=2,"b0")$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)
@@ -220,6 +221,8 @@ print(precis(fl[[2]]$fit,depth=1),digits = 2)
 a0mean = mean(precis(fl[[2]]$fit,depth=2,"a0")$mean)
 b0mean = mean(precis(fl[[2]]$fit,depth=2,"b0")$mean)
 print(c(a0mean,b0mean))
+
+## ---- convert_altpos_m5 --------
 # computing values that correspond to a1 and b1
 a1est = (precis(fl[[2]]$fit,pars="a2")[1,]-1)*a0mean/max(fitdat$dose)
 b1est = (precis(fl[[2]]$fit,pars="b2")[1,]-1)*b0mean/max(fitdat$dose)

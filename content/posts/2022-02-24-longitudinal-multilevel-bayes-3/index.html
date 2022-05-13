@@ -20,7 +20,6 @@ image:
 
 
 
-<p><strong>This is work in progress!</strong></p>
 <p>This is part 3 of a tutorial illustrating how one can use the <code>brms</code> and <code>rethinking</code> R packages to perform a Bayesian analysis of longitudinal data using a multilevel/hierarchical/mixed-effects setup.</p>
 <p>I assume you’ve read both <a href="/posts/longitudinal-multilevel-bayesian-analysis-1/">part 1</a>, and <a href="/posts/longitudinal-multilevel-bayesian-analysis-2/">part 2</a> otherwise this post won’t make much sense.</p>
 <div id="introduction" class="section level1">
@@ -553,7 +552,6 @@ print(fit3otherpars)</code></pre>
 <pre class="r"><code>print(c(fit3a0mean,fit3b0mean))</code></pre>
 <pre><code>## [1] 2.9756367 0.9808696</code></pre>
 <p>Again, model 1 seems worse, with higher uncertainty intervals for the <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> parameters and the mean further away from the true value.</p>
-<!-- I'm not sure why the mean estimates for $a_0$ and $b_0$ are also off. Maybe the way I computed the mean across all individuals of the means of the distribution skewed things? Not sure. Since neither of these models are that great anyway, I'm not trying to dig deeper for now (but if you know what's going on, let me know). -->
 <p>We can also compare the models as we did for <code>rethinking</code> using these lines of code:</p>
 <pre class="r"><code>fit13comp &lt;- loo_compare(add_criterion(fit1,&quot;waic&quot;),
             add_criterion(fit3,&quot;waic&quot;),
@@ -569,7 +567,7 @@ print(fit3otherpars)</code></pre>
 ##                             se_p_waic waic   se_waic
 ## add_criterion(fit1, &quot;waic&quot;)    4.3     832.5   23.4 
 ## add_criterion(fit3, &quot;waic&quot;)    4.3     832.6   23.4</code></pre>
-<p>Model performance is similar between models. Surprisingly, the WAIC values are not that close to those reported by <code>rethinking</code>. Also, the <code>pWAIC</code>, which is a measure for the effective number of parameters in each model, is not quite the same. I am not sure what the reason is for these differences.</p>
+<p>Model performance is similar between models. The WAIC values are also close to those reported by <code>rethinking</code>.</p>
 </div>
 <div id="comparison-with-the-truth-and-ulam" class="section level2">
 <h2>Comparison with the truth and <code>ulam</code></h2>
@@ -683,7 +681,7 @@ pairs(fit4, variable = variables(fit4)[c(16:19,25)])</code></pre>
 </div>
 <div id="comparing-all-models" class="section level2">
 <h2>Comparing all models</h2>
-<p>We can repeat the model comparison we did above, now including all 4 models.</p>
+<p>We can repeat the model comparison we did above, now including all 4 models. I’m looking now at both WAIC and LOO (leave one out). Note the various warning messages. We got that as well when we computed PSIS (which is similar to LOO) with <code>rethinking</code>.</p>
 <pre class="r"><code>fit1a &lt;- add_criterion(fit1,c(&quot;waic&quot;,&quot;loo&quot;))</code></pre>
 <pre><code>## Warning: 
 ## 30 (11.4%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
@@ -719,7 +717,7 @@ print(compall1, simplify = FALSE)</code></pre>
 ## fit3a   -0.6       1.4  -420.4     12.1        47.6    5.0    840.7   24.2  
 ## fit1a   -1.1       1.5  -421.0     12.2        48.2    5.1    841.9   24.4  
 ## fit2a -469.6      23.0  -889.4     22.4        10.3    3.1   1778.9   44.8</code></pre>
-<p>Model 4 is considered best by WAIC, though not by much. The above results, namely faster runtime and better estimates, speak more convincingly to the fact that model 4 is the best of these. The WAIC are still different from those reported by `rethinking``. Again, I don’t know why.</p>
+<p>Model 4 is considered best, though not by much. The above results, namely faster runtime and better estimates, speak more convincingly to the fact that model 4 is the best of these. The LOO is close to the PSIS metric reported by <code>rethinking</code>, even though I don’t think it’s defined and computed exactly the same.</p>
 </div>
 <div id="prior-exploration" class="section level2">
 <h2>Prior exploration</h2>
@@ -893,7 +891,7 @@ b_1 &amp; \sim \mathrm{Normal}(-0.3, 1) \\
 \]</span></p>
 <p>If understand <code>brms</code> correctly, those <code>z_</code> parameters are internal adjustments to make things more efficient and can otherwise be ignored. That means we have 2 times 24 parameters for the individual levels that all start with <code>r_id</code>. Those correspond to the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,1}\)</span>, and they don’t have pre-defined priors, since they are computed based on other parameters. Then we have 2 dose parameters, which map to <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>, both come with priors. We have 2 <code>_Intercept</code> parameters, which correspond to <span class="math inline">\(\mu_a\)</span> and <span class="math inline">\(\mu_b\)</span>, again with priors. We have <span class="math inline">\(\sigma\)</span> with prior, and the two <code>sd_id</code> parameters seem to be those we call <span class="math inline">\(\sigma_a\)</span> and <span class="math inline">\(\sigma_b\)</span> in our equations.</p>
 <p>So it looks like there is a match between our mathematical model we want, and the way we implemented it in <code>brms</code>. Still, I find the <code>brms</code> notation confusing and not that easy to follow. In that respect I much prefer <code>ulam/rethinking</code>.</p>
-<p>In any case, I somewhat convinced myself that I’m fitting the same models here with <code>brms</code> that I’m fitting with <code>ulam</code> (which still leaves me confused about the differences in WAIC).</p>
+<p>In any case, I somewhat convinced myself that I’m fitting the same models here with <code>brms</code> that I’m fitting with <code>ulam</code>.</p>
 </div>
 </div>
 <div id="computing-predictions" class="section level1">
@@ -1015,12 +1013,12 @@ for (n in 1:length(fl))
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-3.png" width="672" /></p>
 <pre class="r"><code>plot(plotlist[[4]])</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/showplots-4.png" width="672" /></p>
-<p>The figures reflect what we found above numerically.</p>
-<!-- Mirroring the findings from above, the models are very similar. In fact, it's hard to tell any difference by just looking at the plots (but they are slightly different, I checked).  So overall, the figures make sense and indicates that apart from models 2/2a, the other models are performing well. I consider model 4/4a the most suitable one. But now looking at these figures and seeing the nice matches between data and models, I'm still a bit puzzled by the fact that $a_1$ and $b_1$ are not that well estimated... -->
+<p>Mirroring the findings from above, the models produce very similar results, especially models 1,3 and 4. Model 2a shows the feature of having very wide prediction intervals, due to the fact that it can’t account for individual-level variation in the main model.</p>
 </div>
 <div id="summary-and-continuation" class="section level1">
 <h1>Summary and continuation</h1>
 <p>To sum it up, we repeated our previous fitting, now using the <code>brms</code> package instead of <code>rethinking</code>. While the two packages have different syntax, the models we fit are the same and thus the results are very close too. That’s comforting. If one approach had produced very different results, it would have meant something was wrong. Of course, as I was writing this series of posts, that happened many times and it took me a while to figure out how to get <code>brms</code> to do what I wanted it to 😁.</p>
-<p>I like the approach of using both packages. It adds an extra layer of robustness. The <code>rethinking</code> code is very close to the math and thus quickly implemented and probably a good first step. <code>brms</code> has some features that go beyond what <code>rethinking</code> can (easily) do, so moving on to re-implementing models in <code>brms</code> and using that code for producing the final results can make sense.</p>
+<p>As of this writing, the one issue I’m almost but not yet fully certain about is if I really have a full match between my mathematical models and the <code>brms</code> implementations (I’m fairly certain the math and <code>ulam</code> implementations match). Though the comparison between <code>ulam</code> and <code>brms</code> results do suggest that I’m running the same models.</p>
+<p>Overall, I like the approach of using both packages. It adds an extra layer of robustness. The <code>rethinking</code> code is very close to the math and thus quickly implemented and probably a good first step. <code>brms</code> has some features that go beyond what <code>rethinking</code> can (easily) do, so moving on to re-implementing models in <code>brms</code> and using that code for producing the final results can make sense.</p>
 <p>This ends the main part of the tutorial (for now). There were several topics I wanted to discuss that didn’t fit here. If you are interested in some further musings, you can hop to <a href="/posts/longitudinal-multilevel-bayesian-analysis-4/">this post</a>, where I discuss a few further topics and variations.</p>
 </div>

@@ -241,13 +241,13 @@ startlist = list(startm1,startm2,startm3,startm4,startm2a,startm4,startm5)</code
 First, some setup before the actual fitting loop.</p>
 <pre class="r"><code>#general settings for fitting
 #you might want to adjust based on your computer
-warmup = 4000
+warmup = 6000
 iter = warmup + floor(warmup/2)
 max_td = 18 #tree depth
 adapt_delta = 0.9999
 chains = 5
 cores  = chains
-seed = 1234
+seed = 4321
 
 #stick all models into a list
 modellist = list(m1=m1,m2=m2,m3=m3,m4=m4,m2a=m2a,m4a=m4a,m5=m5)
@@ -327,15 +327,15 @@ pars &lt;- simdat$m3pars</code></pre>
 <pre class="r"><code># Model 2a summary
 show(fl[[5]]$fit)</code></pre>
 <pre><code>## Hamiltonian Monte Carlo approximation
-## 10000 samples from 5 chains
+## 15000 samples from 5 chains
 ## 
 ## Sampling durations (seconds):
 ##         warmup sample total
-## chain:1  14.40   9.14 23.54
-## chain:2  13.92   5.14 19.06
-## chain:3  13.75   5.89 19.64
-## chain:4  14.10   5.74 19.85
-## chain:5  13.18   8.06 21.24
+## chain:1  22.35   8.14 30.49
+## chain:2  22.90  14.96 37.86
+## chain:3  22.07  11.31 33.38
+## chain:4  21.61  14.70 36.31
+## chain:5  22.59  14.32 36.91
 ## 
 ## Formula:
 ## outcome ~ dnorm(mu, sigma)
@@ -360,7 +360,7 @@ pairs(fl[[5]]$fit, pars = c(&quot;a0&quot;,&quot;b0&quot;,&quot;a1&quot;,&quot;b
 <p>Based on these diagnostic outputs, it seems the chains converged well, at least for model 2a. One interesting feature is the strong correlation between the parameters <span class="math inline">\(a_0\)</span> and <span class="math inline">\(b_0\)</span> and also <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. Recall that <span class="math inline">\(\alpha\)</span> determined the initial increase of the function, <span class="math inline">\(\beta\)</span> the eventual decline. Both parameters determine the shape of the deterministic trajectory for all times, so large values for both can lead to somewhat similar results as small values for both. That is the reason for the correlations we see (and this is a different effect from the correlations we’ll discuss below).</p>
 <div id="models-1-and-3" class="section level2">
 <h2>Models 1 and 3</h2>
-<p>Now I’ll look at bit more carefully at the different models. We start by comparing fits for models 1 and 3. Those two are essentially the same model, with the only difference being wider priors for the individual-level parameters in model 1. It is worth mentioning that when running the fitting routine, model 1 takes much longer to fit than model 3. With the settings I used, runtimes were 227 versus 39 minutes. The wide priors made the fitting efficiency poor. But let’s see how it impacts the results.</p>
+<p>Now I’ll look at bit more carefully at the different models. We start by comparing fits for models 1 and 3. Those two are essentially the same model, with the only difference being wider priors for the individual-level parameters in model 1. It is worth mentioning that when running the fitting routine, model 1 takes much longer to fit than model 3. With the settings I used, runtimes were 331 versus 57 minutes. The wide priors made the fitting efficiency poor. But let’s see how it impacts the results.</p>
 <p>First, we explore priors and posteriors. They are easy to extract from the models using the <code>extract.prior()</code> and <code>extract.samples()</code> functions from <code>rethinking</code>.</p>
 <pre class="r"><code>#get priors and posteriors for models 1 and 3
 m1prior &lt;- extract.prior(fl[[1]]$fit, n = 1e4)
@@ -419,23 +419,23 @@ b0mean = mean(precis(fl[[1]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[1]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##        mean    sd  5.5% 94.5% n_eff Rhat4
-## a1     0.25 0.748 -0.95  1.42  1557     1
-## b1    -0.20 0.738 -1.40  0.97  1823     1
-## sigma  0.97 0.048  0.90  1.05 10615     1</code></pre>
+## a1     0.22 0.736 -0.96  1.40  2600     1
+## b1    -0.21 0.745 -1.40  0.98  2384     1
+## sigma  1.06 0.052  0.98  1.15 16450     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.953377 1.006442</code></pre>
+<pre><code>## [1] 2.961711 1.005527</code></pre>
 <pre class="r"><code># Model 3
 a0mean = mean(precis(fl[[3]]$fit,depth=2,&quot;a0&quot;)$mean)
 b0mean = mean(precis(fl[[3]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[3]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##         mean    sd   5.5% 94.5% n_eff Rhat4
-## a1     0.144 0.105 -0.022 0.313  1774     1
-## b1    -0.079 0.108 -0.249 0.096  1867     1
-## sigma  0.972 0.046  0.900 1.048 10326     1</code></pre>
+## a1     0.141 0.110 -0.033 0.316  3005     1
+## b1    -0.082 0.109 -0.256 0.093  2776     1
+## sigma  1.062 0.052  0.985 1.148 15663     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.9726180 0.9828763</code></pre>
-<p>The models seem to have converged ok, based on <code>Rhat</code> values of 1. Some parameters sampled better than others, as can be seen by the varying <code>n_eff</code> values. I used 5 chains of 2000 post-warmup samples for each chain, so the actual samples are 10000. If <code>n_eff</code> is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it’s possible to get more effective samples than actual samples.)</p>
+<pre><code>## [1] 2.9757761 0.9810916</code></pre>
+<p>The models seem to have converged ok, based on <code>Rhat</code> values of 1. Some parameters sampled better than others, as can be seen by the varying <code>n_eff</code> values. I used 5 chains of 3000 post-warmup samples for each chain, so the actual samples are 15000. If <code>n_eff</code> is lower than that, it means the sampling was not efficient, more means it worked very well (see e.g. Statistical Rethinking why it’s possible to get more effective samples than actual samples.)</p>
 <p>We find that estimates for <span class="math inline">\(a_{0}\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(\sigma\)</span> are similar, <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> differ more.</p>
 <p>Again, note that the only thing we changed between models 1 and 3 are to make the priors for the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> parameters tighter. It didn’t seem to impact estimates for those parameters, but it did impact the estimates for the posterior distributions of parameters <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span>. The numbers are consistent with the posterior distribution figures above.</p>
 </div>
@@ -455,32 +455,32 @@ b0mean = mean(precis(fl[[2]]$fit,depth=2,&quot;b0&quot;)$mean)
 #rest of model 2
 print(precis(fl[[2]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
-<pre><code>##         mean     sd   5.5%  94.5% n_eff Rhat4
-## mu_a   2.969 0.0199  2.935  3.000   5.2   1.5
-## mu_b   0.985 0.0170  0.958  1.014   6.0   1.5
-## a1     0.103 0.0096  0.089  0.118  40.0   1.1
-## b1    -0.093 0.0094 -0.110 -0.079  39.7   1.1
-## sigma  6.901 0.2978  6.450  7.400  70.0   1.0</code></pre>
+<pre><code>##         mean     sd  5.5%  94.5% n_eff Rhat4
+## mu_a   2.992 0.0271  2.94  3.026    16   1.4
+## mu_b   0.999 0.0236  0.96  1.029    12   1.4
+## a1     0.095 0.0097  0.08  0.111   101   1.1
+## b1    -0.097 0.0082 -0.11 -0.083   147   1.1
+## sigma  6.867 0.2838  6.46  7.334   244   1.0</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 2.9692270 0.9849032</code></pre>
+<pre><code>## [1] 2.991509 0.998633</code></pre>
 <pre class="r"><code>#model 2a
 print(precis(fl[[5]]$fit,depth=1),digits = 2)</code></pre>
-<pre><code>##         mean     sd   5.5%  94.5% n_eff Rhat4
-## a0     2.914 0.0240  2.875  2.951  3757     1
-## b0     0.938 0.0205  0.904  0.970  4079     1
-## a1     0.113 0.0109  0.096  0.130  4130     1
-## b1    -0.094 0.0094 -0.109 -0.079  4206     1
-## sigma  7.036 0.3223  6.545  7.579  5125     1</code></pre>
+<pre><code>##         mean     sd  5.5%  94.5% n_eff Rhat4
+## a0     2.920 0.0236  2.88  2.957  5343     1
+## b0     0.938 0.0204  0.90  0.971  5651     1
+## a1     0.107 0.0109  0.09  0.125  6123     1
+## b1    -0.098 0.0094 -0.11 -0.084  6787     1
+## sigma  7.003 0.3207  6.51  7.536  7308     1</code></pre>
 <p>The first thing to note is that model 2 performs awfully, with <code>Rhat</code> values &gt;1 and very low effective sample size <code>n_eff</code>. This indicates that this model doesn’t work well for the data. Whenever you see diagnostics like that, you should not take the estimated values seriously. However, let’s pretend for a moment that we can take them seriously. Here is what we find.</p>
-<p>First, both models produce similar estimates. Since model 2a is simpler and doesn’t have that strange feature of us enforcing a very tight distribution for the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> parameters, it actually samples much better, see the higher <code>n_eff</code> numbers. It also runs much faster, 0.9 minutes compared to 28 minutes for model 2.</p>
+<p>First, both models produce similar estimates. Since model 2a is simpler and doesn’t have that strange feature of us enforcing a very tight distribution for the <span class="math inline">\(a_{0,i}\)</span> and <span class="math inline">\(b_{0,i}\)</span> parameters, it actually samples much better, see the higher <code>n_eff</code> numbers. It also runs much faster, 1.3 minutes compared to 30 minutes for model 2.</p>
 <p>Both models do a very poor job estimating <span class="math inline">\(\sigma\)</span>. That’s because we don’t allow the models to have the flexibility needed to fit the data, so it has to account for any variation between its estimated mean trajectory and the real data by making <span class="math inline">\(\sigma\)</span> large.</p>
 <p>Since the models are more constrained compared to models 1 and 3, they produce estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> that are tighter. However, these estimates are over-confident. overall these models underfitting and are not good. We can for instance look at this using the <code>compare</code> function:</p>
 <pre class="r"><code>compare(fl[[1]]$fit,fl[[3]]$fit,fl[[2]]$fit,fl[[5]]$fit)</code></pre>
-<pre><code>##                  WAIC       SE        dWAIC        dSE    pWAIC        weight
-## fl[[3]]$fit  786.8312 23.14590    0.0000000         NA 44.27149  5.320471e-01
-## fl[[1]]$fit  787.0879 23.07550    0.2567285  0.4294088 44.25671  4.679529e-01
-## fl[[2]]$fit 1781.4503 45.27575  994.6190928 51.2385786 10.99948 5.586737e-217
-## fl[[5]]$fit 1790.5547 45.25853 1003.7235340 51.1045017 10.60768 5.890525e-219</code></pre>
+<pre><code>##                  WAIC       SE        dWAIC        dSE     pWAIC        weight
+## fl[[1]]$fit  832.9455 23.39942   0.00000000         NA 43.718111  5.067138e-01
+## fl[[3]]$fit  832.9992 23.42829   0.05371325  0.4274202 43.737196  4.932862e-01
+## fl[[2]]$fit 1778.3776 44.18971 945.43210978 45.5782040  9.698475 2.551459e-206
+## fl[[5]]$fit 1788.1450 45.28523 955.19949836 47.0533571 10.466546 1.931199e-208</code></pre>
 <p>I’m not going to discuss things in detail (see <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking</a>), but a lower WAIC means a model that fits best in the sense that it strikes a good balance between fitting the data while not overfitting. As you can see, models 1 and 3 perform very similarly and models 2 and 2a are much worse.</p>
 <p>The larger WAIC indicates either strong overfitting or underfitting. In this case, it’s underfitting. The models are not flexible enough to capture the individual-level variation. You’ll see that clearly in the plots shown further below. If we did indeed not want to account for individual-level variation, we should go with a model that simply doesn’t include it, i.e. model 2a. The contrived model 2 with very narrow priors is just a bad model, and I’m really only exploring it here for demonstration purposes.</p>
 </div>
@@ -546,42 +546,42 @@ dev.off()</code></pre>
 print(precis(fl[[4]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##           mean    sd   5.5%  94.5% n_eff Rhat4
-## mu_a     2.983 0.019  2.953  3.014  9187     1
-## mu_b     0.988 0.024  0.949  1.025  8891     1
-## sigma_a  0.092 0.015  0.071  0.119  8163     1
-## sigma_b  0.112 0.018  0.087  0.143  7578     1
-## a1       0.090 0.010  0.073  0.106  1227     1
-## b1      -0.101 0.012 -0.121 -0.081  1280     1
-## sigma    0.973 0.047  0.900  1.052  9095     1</code></pre>
+## mu_a     2.987 0.020  2.956  3.018 14437     1
+## mu_b     0.986 0.025  0.946  1.026 14777     1
+## sigma_a  0.093 0.016  0.071  0.121 10722     1
+## sigma_b  0.119 0.020  0.092  0.153 12199     1
+## a1       0.086 0.010  0.069  0.102  2170     1
+## b1      -0.107 0.013 -0.128 -0.085  2230     1
+## sigma    1.062 0.052  0.983  1.148 13477     1</code></pre>
 <pre class="r"><code># model 4a
 print(precis(fl[[6]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##           mean    sd   5.5%  94.5% n_eff Rhat4
-## mu_a     2.983 0.020  2.952  3.014  2525     1
-## mu_b     0.987 0.024  0.951  1.024  2364     1
-## sigma_a  0.092 0.016  0.071  0.120  2524     1
-## sigma_b  0.112 0.019  0.086  0.145  2794     1
-## a1       0.091 0.010  0.074  0.107  2954     1
-## b1      -0.101 0.012 -0.120 -0.081  2501     1
-## sigma    0.973 0.047  0.900  1.051  6382     1</code></pre>
+## mu_a     2.987 0.019  2.956  3.017  3803     1
+## mu_b     0.986 0.025  0.946  1.026  3259     1
+## sigma_a  0.093 0.016  0.072  0.121  4376     1
+## sigma_b  0.119 0.020  0.092  0.153  4285     1
+## a1       0.086 0.010  0.069  0.103  4267     1
+## b1      -0.106 0.013 -0.126 -0.084  3861     1
+## sigma    1.062 0.051  0.985  1.148 10624     1</code></pre>
 <p>The numerics confirm that the two models lead to essentially the same results. The values for <code>n_eff</code> differ between models, though neither model is consistently larger. This suggests that each model formulation had advantages in sampling for some of the parameters.</p>
-<p>In terms of run times, there wasn’t much difference, with 5 minutes for model 4 versus 7 minutes for model 4a (much better than models 1-3).</p>
+<p>In terms of run times, there wasn’t much difference, with 7 minutes for model 4 versus 10 minutes for model 4a (much better than models 1-3).</p>
 <p>If we compare the parameter estimates with the true values and those found for models 1 and 3 above, we find that again the true <span class="math inline">\(\mu_a\)</span>, <span class="math inline">\(\mu_b\)</span> and <span class="math inline">\(\sigma\)</span> are estimated fairly well. Estimates for <span class="math inline">\(a_1\)</span> and <span class="math inline">\(b_1\)</span> are now also pretty good, and the credible intervals are less wide.</p>
 <p>Now let’s briefly run the <code>compare</code> function too and include model 3 as well. In addition to using WAIC for comparison, I’m also including PSIS. Read about it in the Statistical Rethinking book. One advantage of PSIS is that it gives warnings if the estimates might not be reliable. You see that this happens here.</p>
 <pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit, func = WAIC)</code></pre>
 <pre><code>##                 WAIC       SE     dWAIC       dSE    pWAIC    weight
-## fl[[4]]$fit 785.7564 23.21761 0.0000000        NA 43.40855 0.4346582
-## fl[[6]]$fit 786.4235 23.28410 0.6670811 0.3800124 43.75155 0.3113817
-## fl[[3]]$fit 786.8312 23.14590 1.0747658 2.2075132 44.27149 0.2539601</code></pre>
+## fl[[4]]$fit 831.0751 23.40197 0.0000000        NA 42.58290 0.4659494
+## fl[[6]]$fit 831.6133 23.39119 0.5382072 0.3058545 42.76359 0.3560152
+## fl[[3]]$fit 832.9992 23.42829 1.9241902 2.5641934 43.73720 0.1780353</code></pre>
 <pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[6]]$fit, func = PSIS)</code></pre>
 <pre><code>## Some Pareto k values are high (&gt;0.5). Set pointwise=TRUE to inspect individual points.
 ## Some Pareto k values are high (&gt;0.5). Set pointwise=TRUE to inspect individual points.
 ## Some Pareto k values are high (&gt;0.5). Set pointwise=TRUE to inspect individual points.</code></pre>
-<pre><code>##                 PSIS       SE    dPSIS       dSE    pPSIS    weight
-## fl[[4]]$fit 793.8170 23.86923 0.000000        NA 47.43886 0.5289883
-## fl[[3]]$fit 795.4293 23.85856 1.612292 2.3819019 48.57055 0.2362334
-## fl[[6]]$fit 795.4417 24.11740 1.624649 0.7861994 48.26064 0.2347783</code></pre>
-<p>We do find that model 4/4a performs a bit better, but not by much. Note that model 4/4a has more actual parameters, but the effective parameters (which is described by <code>pWAIC</code>) is smaller. Though the difference is small and WAIC and PSIS don’t fully agree.</p>
+<pre><code>##                 PSIS       SE     dPSIS       dSE    pPSIS    weight
+## fl[[4]]$fit 839.5114 24.33096 0.0000000        NA 46.80107 0.4616132
+## fl[[6]]$fit 839.8745 24.30905 0.3630563 0.5782962 46.89419 0.3849830
+## fl[[3]]$fit 841.7147 24.33321 2.2033083 2.7044971 48.09493 0.1534037</code></pre>
+<p>We do find that model 4/4a performs a bit better, but not by much. Note that model 4/4a has more actual parameters, but the effective parameters (which is described by <code>pWAIC</code>) is a bit smaller.</p>
 <p>Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely and efficiently and is the best of the models.</p>
 </div>
 <div id="model-5-1" class="section level2">
@@ -604,15 +604,15 @@ b0mean = mean(precis(fl[[7]]$fit,depth=2,&quot;b0&quot;)$mean)
 print(precis(fl[[7]]$fit,depth=1),digits = 2)</code></pre>
 <pre><code>## 48 vector or matrix parameters hidden. Use depth=2 to show them.</code></pre>
 <pre><code>##       mean    sd 5.5% 94.5% n_eff Rhat4
-## sigma 0.97 0.047  0.9   1.1 11823     1</code></pre>
+## sigma  1.1 0.052 0.98   1.1 16614     1</code></pre>
 <pre class="r"><code>print(c(a0mean,b0mean))</code></pre>
-<pre><code>## [1] 3.0005793 0.9679903</code></pre>
+<pre><code>## [1] 3.0031331 0.9655931</code></pre>
 <p>It doesn’t seem quite as good as the previous models.</p>
 <pre class="r"><code>compare(fl[[3]]$fit,fl[[4]]$fit,fl[[7]]$fit)</code></pre>
 <pre><code>##                 WAIC       SE    dWAIC      dSE    pWAIC    weight
-## fl[[4]]$fit 785.7564 23.21761 0.000000       NA 43.40855 0.4772231
-## fl[[3]]$fit 786.8312 23.14590 1.074766 2.207513 44.27149 0.2788297
-## fl[[7]]$fit 787.0985 23.13355 1.342064 2.102841 44.32963 0.2439473</code></pre>
+## fl[[4]]$fit 831.0751 23.40197 0.000000       NA 42.58290 0.5705560
+## fl[[3]]$fit 832.9992 23.42829 1.924190 2.564193 43.73720 0.2180046
+## fl[[7]]$fit 833.0604 23.39781 1.985346 2.445539 43.82551 0.2114394</code></pre>
 <p><strong>And of course the main problem with this model: It can’t answer any question about the role of dose, since we removed that component from the model!</strong> So while ok to explore, scientifically not useful since it can’t help us address the question we want to answer regarding the potential impact of dose.</p>
 </div>
 </div>

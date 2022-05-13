@@ -334,7 +334,7 @@ Now let's briefly run the `compare` function too and include model 3 as well. In
 ```{r mod_4_4a_comparison}
 ```
 
-We do find that model 4/4a performs a bit better, but not by much. Note that model 4/4a has more actual parameters, but the effective parameters (which is described by `pWAIC`) is smaller. Though the difference is small and WAIC and PSIS don't fully agree.
+We do find that model 4/4a performs a bit better, but not by much. Note that model 4/4a has more actual parameters, but the effective parameters (which is described by `pWAIC`) is a bit smaller. 
 
 Overall, this suggests that the adaptive pooling approach helped to estimate results more precisely and efficiently and is the best of the models. 
 

@@ -40,33 +40,24 @@ m4 <- alist(
   sigma ~ cauchy(0, 1)
 )
 
-## ---- model-3 --------
-#regularizing prior, partial-pooling model
-m3 <- alist(
-  outcome ~ dnorm(mu, sigma),
-  mu <- exp(alpha)*log(time) - exp(beta)*time,
-  alpha <-  a0[id] + a1*dose_adj,
-  beta <-  b0[id] + b1*dose_adj,
-  a0[id] ~ dnorm(2,  1),
-  b0[id] ~ dnorm(0.5, 1),
-  a1 ~ dnorm(0.3, 1),
-  b1 ~ dnorm(-0.3, 1),
-  sigma ~ cauchy(0,1)
-)
 
-## ---- model-3a --------
-#regularizing prior, partial-pooling model
+## ---- model-4a --------
+#adaptive priors, partial-pooling model
 #no middle dose subtraction
-m3a <- alist(
+m4a <- alist(
   outcome ~ dnorm(mu, sigma),
   mu <- exp(alpha)*log(time) - exp(beta)*time,
-  alpha <-  a0[id] + a1*dose,
-  beta <-  b0[id] + b1*dose,
-  a0[id] ~ dnorm(2,  1),
-  b0[id] ~ dnorm(0.5, 1),
+  alpha <-  a0[id] + a1 * dose,
+  beta <-  b0[id] + b1 * dose,
+  a0[id] ~ dnorm(mu_a,  sigma_a),
+  b0[id] ~ dnorm(mu_b, sigma_b),
+  mu_a ~ dnorm(2, 1),
+  mu_b ~ dnorm(0.5, 1),
+  sigma_a ~ cauchy(0, 1),
+  sigma_b ~ cauchy(0, 1),
   a1 ~ dnorm(0.3, 1),
   b1 ~ dnorm(-0.3, 1),
-  sigma ~ cauchy(0,1)
+  sigma ~ cauchy(0, 1)
 )
 
 
@@ -77,16 +68,21 @@ m5 <- alist(
   mu <- exp(alpha)*log(time) - exp(beta)*time,
   alpha <-  a0[id]*(1 + (a2-1) * dose_adj2),
   beta <-  b0[id]*(1 + (b2-1) *dose_adj2),
-  a0[id] ~ dlnorm(0,  1),
-  b0[id] ~ dlnorm(0, 1),
+  a0[id] ~ dlnorm(mu_a,  sigma_a),
+  b0[id] ~ dlnorm(mu_b, sigma_b),
+  mu_a ~ dnorm(1, 0.5),
+  mu_b ~ dnorm(0, 0.5),
+  sigma_a ~ cauchy(0, 1),
+  sigma_b ~ cauchy(0, 1),
   a2 ~ dlnorm(0, 1),
   b2 ~ dlnorm(0, 1),
-  sigma ~ cauchy(0,1)
+  sigma ~ cauchy(0, 1)
 )
+
+
 
 ## ---- model-6 --------
 #model with dose treated as categorical
-#naming this model m6
 m6 <- alist(
   outcome ~ dnorm(mu, sigma),
   mu <- exp(alpha)*log(time) - exp(beta)*time,
@@ -112,14 +108,13 @@ m6 <- alist(
 ######################################
 #general settings for fitting
 #you might want to adjust based on your computer
-warmup = 4000
+warmup = 6000
 iter = warmup + floor(warmup/2)
-max_td = 17 #tree depth
-adapt_delta = 0.999
+max_td = 18 #tree depth
+adapt_delta = 0.9999
 chains = 5
 cores  = chains
-seed = 1234
-
+seed = 123
 
 
 
@@ -183,7 +178,7 @@ Ntot = length(unique(fitdat$id))
 ## Setting starting values
 #starting values for model 2
 startm2a = list(a0 = 2, b0 = 0.5, a1 = 0.5 , b1 = -0.5, sigma = 1)
-#starting values for models 4
+#starting values for model 4
 startm4 = list(mu_a = 2, sigma_a = 1, mu_b = 0, sigma_b = 1, a1 = 0.5 , b1 = -0.5, sigma = 1)
 #put different starting values in list
 #need to be in same order as models below
@@ -264,7 +259,7 @@ saveRDS(fl,filepath)
 
 ## ---- fittingsetup-altpos --------
 #stick all models into a list
-modellist = list(m3a=m3a, m5=m5)
+modellist = list(m4a=m4a, m5=m5)
 # set up a list in which we'll store our results
 fits = vector(mode = "list", length = length(modellist))
 
@@ -284,18 +279,19 @@ fitdat=list(id=simdat[[3]]$id,
 #pulling out number of observations
 Ntot = length(unique(fitdat$id))
 
-#starting values for model 3a
-startm3a = list(a0 = rep(2,Ntot), b0 = rep(0.5,Ntot), a2 = 0.5 , b2 = -0.5, sigma = 1)
+
+#starting values for model 4a
+startm4a = list(mu_a = 2, sigma_a = 1, mu_b = 0, sigma_b = 1, a1 = 0.5 , b1 = -0.5, sigma = 1)
 #starting values for model 5
-startm5 = list(a0u = 0, b0u = 0, a2 = 0.5 , b2 = 0.5, sigma = 1)
+startm5 = list(mu_a = 2, sigma_a = 1, mu_b = 0, sigma_b = 1, a1 = 0.2 , b1 = -0.2, sigma = 1)
 #put different starting values in list
 #need to be in same order as models below
-startlist = list(startm3a, startm5)
+startlist = list(startm4a, startm5)
 
 # defining constraints on parameters
-constm3 = list(sigma="lower=0")
-constm5 = list(sigma="lower=0")
-constraintlist = list(constm3,constm5)
+constm4a = list(sigma="lower=0",sigma_a="lower=0",sigma_b="lower=0")
+constm5 = list(sigma="lower=0",sigma_a="lower=0",sigma_b="lower=0")
+constraintlist = list(constm4a, constm5)
 
 
 ## ---- modelfitting-altpos --------
@@ -365,5 +361,5 @@ for (n in 1:length(modellist))
 # saving the results so we can use them later
 filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_cat", ext="Rds")
 saveRDS(fl,filepath)
-
+cat('all done')
 

@@ -184,13 +184,13 @@ startlist = list(startm1,startm2,startm3,startm4,startm2a,startm4,startm5)
 ## ---- fittingsetup --------
 #general settings for fitting
 #you might want to adjust based on your computer
-warmup = 4000
+warmup = 6000
 iter = warmup + floor(warmup/2)
 max_td = 18 #tree depth
 adapt_delta = 0.9999
 chains = 5
 cores  = chains
-seed = 1234
+seed = 4321
 
 #stick all models into a list
 modellist = list(m1=m1,m2=m2,m3=m3,m4=m4,m2a=m2a,m4a=m4a,m5=m5)

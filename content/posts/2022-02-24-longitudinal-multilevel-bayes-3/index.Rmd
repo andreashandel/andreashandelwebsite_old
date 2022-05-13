@@ -30,8 +30,6 @@ knitr::read_chunk('brmsexploremodels.R')
 ```
 
 
-**This is work in progress!**
-
 This is part 3 of a tutorial illustrating how one can use the `brms` and `rethinking` R packages to perform a Bayesian analysis of longitudinal data using a multilevel/hierarchical/mixed-effects setup.
 
 I assume you've read both [part 1](/posts/longitudinal-multilevel-bayesian-analysis-1/), and [part 2](/posts/longitudinal-multilevel-bayesian-analysis-2/) otherwise this post won't make much sense.
@@ -256,14 +254,12 @@ Let's look at the posteriors in numerical form.
 
 Again, model 1 seems worse, with higher uncertainty intervals for the $a_1$ and $b_1$ parameters and the mean further away from the true value. 
 
-<!-- I'm not sure why the mean estimates for $a_0$ and $b_0$ are also off. Maybe the way I computed the mean across all individuals of the means of the distribution skewed things? Not sure. Since neither of these models are that great anyway, I'm not trying to dig deeper for now (but if you know what's going on, let me know). -->
-
 We can also compare the models as we did for `rethinking` using these lines of code:
 
 ```{r mod_1_3_comparison}
 ```
 
-Model performance is similar between models. Surprisingly, the WAIC values are not that close to those reported by `rethinking`. Also, the `pWAIC`, which is a measure for the effective number of parameters in each model, is not quite the same. I am not sure what the reason is for these differences.
+Model performance is similar between models. The WAIC values are also close to those reported by `rethinking`. 
 
 
 ## Comparison with the truth and `ulam`
@@ -321,12 +317,12 @@ As was the case for the `ulam` fits, model 4 seems to perform overall best.
 ## Comparing all models
 
 
-We can repeat the model comparison we did above, now including all 4 models.
+We can repeat the model comparison we did above, now including all 4 models. I'm looking now at both WAIC and LOO (leave one out). Note the various warning messages. We got that as well when we computed PSIS (which is similar to LOO) with `rethinking`.
 
 ```{r mod_all_comparison}
 ```
 
-Model 4 is considered best by WAIC, though not by much. The above results, namely faster runtime and better estimates, speak more convincingly to the fact that model 4 is the best of these. The WAIC are still different from those reported by `rethinking``. Again, I don't know why.
+Model 4 is considered best, though not by much. The above results, namely faster runtime and better estimates, speak more convincingly to the fact that model 4 is the best of these. The LOO is close to the PSIS metric reported by `rethinking`, even though I don't think it's defined and computed exactly the same. 
 
 
 
@@ -387,7 +383,7 @@ If understand `brms` correctly, those `z_` parameters are internal adjustments t
 
 So it looks like there is a match between our mathematical model we want, and the way we implemented it in `brms`. Still, I find the `brms` notation confusing and not that easy to follow. In that respect I much prefer `ulam/rethinking`.
 
-In any case, I somewhat convinced myself that I'm fitting the same models here with `brms` that I'm fitting with `ulam` (which still leaves me confused about the differences in WAIC).
+In any case, I somewhat convinced myself that I'm fitting the same models here with `brms` that I'm fitting with `ulam`.
 
 
 # Computing predictions
@@ -421,11 +417,7 @@ It's a bit hard to see, but each plot contains for each individual the data as s
 ```
 
 
-The figures reflect what we found above numerically. 
-
-
-<!-- Mirroring the findings from above, the models are very similar. In fact, it's hard to tell any difference by just looking at the plots (but they are slightly different, I checked).  So overall, the figures make sense and indicates that apart from models 2/2a, the other models are performing well. I consider model 4/4a the most suitable one. But now looking at these figures and seeing the nice matches between data and models, I'm still a bit puzzled by the fact that $a_1$ and $b_1$ are not that well estimated... -->
-
+Mirroring the findings from above, the models produce very similar results, especially models 1,3 and 4. Model 2a shows the feature of having very wide prediction intervals, due to the fact that it can't account for individual-level variation in the main model.
 
 
 
@@ -433,7 +425,9 @@ The figures reflect what we found above numerically.
 
 To sum it up, we repeated our previous fitting, now using the `brms` package instead of `rethinking`. While the two packages have different syntax, the models we fit are the same and thus the results are very close too. That's comforting. If one approach had produced very different results, it would have meant something was wrong. Of course, as I was writing this series of posts, that happened many times and it took me a while to figure out how to get `brms` to do what I wanted it to `r emoji::emoji('grin')`.
 
-I like the approach of using both packages. It adds an extra layer of robustness. The `rethinking` code is very close to the math and thus quickly implemented and probably a good first step. `brms` has some features that go beyond what `rethinking` can (easily) do, so moving on to re-implementing models in `brms` and using that code for producing the final results can make sense.
+As of this writing, the one issue I'm almost but not yet fully certain about is if I really have a full match between my mathematical models and the `brms` implementations (I'm fairly certain the math and `ulam` implementations match). Though the comparison between `ulam` and `brms` results do suggest that I'm running the same models.
+
+Overall, I like the approach of using both packages. It adds an extra layer of robustness. The `rethinking` code is very close to the math and thus quickly implemented and probably a good first step. `brms` has some features that go beyond what `rethinking` can (easily) do, so moving on to re-implementing models in `brms` and using that code for producing the final results can make sense.
 
 This ends the main part of the tutorial (for now). There were several topics I wanted to discuss that didn't fit here. If you are interested in some further musings, you can hop to [this post](/posts/longitudinal-multilevel-bayesian-analysis-4/), where I discuss a few further topics and variations. 
 
