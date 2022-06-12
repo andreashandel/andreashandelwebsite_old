@@ -120,12 +120,12 @@ Let's see if we can fix the font issue. While setting the font through `update_d
 
 We can however ask `flowdiagramr` to write all the `ggplot2` code that produces the diagram into a file, then modify ourselves.
 
-This writes the full ggplot code to an R script file
+This writes the full ggplot code to an R script file:
 
 ```{r, writecode, message=FALSE}
 ```
 
-Now we can open that file, find the part that creates the text for the boxes (that part starts with "add label text") and simply add this part `family = "henny"` into the `geom_text()` statement. We'll also copy the commands from above to the end of the script to update the `diagram_plot` object. Then we'll save the updated file, source it, and thus have an updated diagram. [Here]((/posts/flowdiagramr-R-package/gl_diag_mod.R) is the updated script if it's not clear what I'm doing.
+Now we can open that file, find the part that creates the text for the boxes (that part starts with "add label text") and simply add this part `family = "henny"` into the `geom_text()` statement. We'll also copy the commands from above to the end of the script to update the `diagram_plot` object. Then we'll save the updated file, source it, and thus have an updated diagram. [Here](/posts/flowdiagramr-R-package/gl_diag_mod.R) is the updated script if it's not clear what I'm doing.
 
 
 ```{r, newdiagcode}

@@ -163,10 +163,10 @@ gl_diag2 &lt;- gl_diag  +
 <h1>Even more diagram styling</h1>
 <p>Let’s see if we can fix the font issue. While setting the font through <code>update_diagram</code> is on the to-do list, as of this writing, this feature does not yet exist (contributions welcome 😁).</p>
 <p>We can however ask <code>flowdiagramr</code> to write all the <code>ggplot2</code> code that produces the diagram into a file, then modify ourselves.</p>
-<p>This writes the full ggplot code to an R script file</p>
+<p>This writes the full ggplot code to an R script file:</p>
 <pre class="r"><code>write_diagram(gl_list2,filename = &quot;gl_diag.R&quot;, always_overwrite = TRUE)</code></pre>
 <pre><code>## [1] &quot;Your file was saved here: D:/GitHub/andreashandel/andreashandelwebsite/content/posts/2022-06-11-flowdiagramr-exploration/gl_diag.R&quot;</code></pre>
-<p>Now we can open that file, find the part that creates the text for the boxes (that part starts with “add label text”) and simply add this part <code>family = "henny"</code> into the <code>geom_text()</code> statement. We’ll also copy the commands from above to the end of the script to update the <code>diagram_plot</code> object. Then we’ll save the updated file, source it, and thus have an updated diagram. [Here]((/posts/flowdiagramr-R-package/gl_diag_mod.R) is the updated script if it’s not clear what I’m doing.</p>
+<p>Now we can open that file, find the part that creates the text for the boxes (that part starts with “add label text”) and simply add this part <code>family = "henny"</code> into the <code>geom_text()</code> statement. We’ll also copy the commands from above to the end of the script to update the <code>diagram_plot</code> object. Then we’ll save the updated file, source it, and thus have an updated diagram. <a href="/posts/flowdiagramr-R-package/gl_diag_mod.R">Here</a> is the updated script if it’s not clear what I’m doing.</p>
 <pre class="r"><code>source(&quot;gl_diag_mod.R&quot;)
 # plot new diagram
 plot(diagram_plot)</code></pre>
@@ -213,6 +213,8 @@ gl_list_new2 &lt;- flowdiagramr::update_diagram(gl_list_new,diagram_settings)
 gl_diag_new &lt;- flowdiagramr::make_diagram(gl_list_new2)
 plot(gl_diag_new)</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/preparemakenew-1.png" width="672" /></p>
+<pre class="r"><code>ggsave(&#39;featured.png&#39;,diagram_plot)</code></pre>
+<pre><code>## Saving 7 x 5 in image</code></pre>
 <p>I’m skipping the font adjustment and other parts, but of course you can apply that again. This ability to create feedback loops - which are very common in scientific process/simulation/mechanistic models - is the reason we built <code>flowdiagramr</code>. But as you saw, it can be used for all kinds of diagrams.</p>
 </div>
 <div id="further-resources" class="section level1">
