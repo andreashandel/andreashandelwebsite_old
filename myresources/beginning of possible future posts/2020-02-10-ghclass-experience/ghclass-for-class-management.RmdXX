@@ -1,12 +1,12 @@
 ---
 title: How to use the ghclass R package as part of teaching  
 subtitle: Some examples for online class management through a Github organization 
-summary: ''
+description: ''
 author: Andreas Handel
 date: '2020-01-10'
-slug: ghclass-management
+aliases: \r\n  -  ghclass-management
 categories: []
-tags: []
+categories: []
 lastmod: '2020-01-10'
 featured: no
 image:

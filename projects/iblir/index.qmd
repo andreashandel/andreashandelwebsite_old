@@ -1,0 +1,15 @@
+---
+title: "iblir - Introduction to Biostatistics Labs in R"
+description: "R package containing a collection of online, interactive shiny/learnr based labs that teach basics of biostatistics."
+image: featured.png
+image-alt: iblir logo
+categories:
+  - R Package
+  - Statistics
+  - Teaching
+about:
+  template: solana
+  image: featured.png
+---
+
+An R package that contains several Shiny/learnr based tutorials that teach introductory aspects of biostatistics in an interactive way. Learn more about it [on the package website](https://andreashandel.github.io/iblir/).

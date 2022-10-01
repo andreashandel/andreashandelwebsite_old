@@ -10,6 +10,9 @@
 ## General
 * Some information that applies to this site and handelgroup is not repeated here, see the handelgroup notes file.
 
+* It seems that qmd sites can't handle the weaving of code with markdown using the read_chunk setup. They ignore eval= FALSE and run stuff anyway. Might need to run those as Rmd files until fixed.
+
+
 ## Needed R packages
 This is a hopefully complete list of all R packages needed to recompile all the posts of the website:
 

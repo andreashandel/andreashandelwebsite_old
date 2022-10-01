@@ -1,14 +1,14 @@
 ---
 title: Generating and using simulated data  
-summary: A brief discussion on generating simulated data.
+description: A brief discussion on generating simulated data.
 author: Andreas Handel
 date: '2022-05-05'
 lastMod: "2022-05-05"
-slug: generating-using-data
+aliases: \r\n  -  generating-using-data
 categories: 
 - R
 - Data Analysis
-tags: 
+categories: 
 - R
 - Data Analysis
 - Bayesian

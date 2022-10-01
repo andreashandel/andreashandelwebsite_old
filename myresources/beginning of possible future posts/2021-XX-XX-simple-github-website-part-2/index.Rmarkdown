@@ -1,13 +1,13 @@
 ---
 title: Some tips and tricks for a simple Markdown/Github website 
 subtitle: 
-summary: "The following are step-by-step instructions for creating a fairly basic but still useful website using [R Markdown](https://rmarkdown.rstudio.com/) (through [R Studio](https://rstudio.com/products/rstudio/)) and [Github](https://github.com/)."
+description: "The following are step-by-step instructions for creating a fairly basic but still useful website using [R Markdown](https://rmarkdown.rstudio.com/) (through [R Studio](https://rstudio.com/products/rstudio/)) and [Github](https://github.com/)."
 author: "[Andreas Handel](https://www.andreashandel.com)"
 date: '2021-01-11'
-slug: github-website
+aliases: \r\n  -  github-website
 draft: false
 categories: []
-tags: ["R", "markdown", "github", "website"]
+categories: ["R", "markdown", "github", "website"]
 featured: no
 disable_jquery: no
 image:

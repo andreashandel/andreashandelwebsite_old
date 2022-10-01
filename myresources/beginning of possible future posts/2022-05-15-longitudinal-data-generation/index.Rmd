@@ -1,14 +1,14 @@
 ---
 title: Generating (longitudinal) simulated data  
-summary: A brief discussion on generating simulated data.
+description: A brief discussion on generating simulated data.
 author: Andreas Handel
 date: '2022-04-30'
 lastMod: "2022-04-30"
-slug: generating-simulated-data
+aliases: \r\n  -  generating-simulated-data
 categories: 
 - R
 - Data Analysis
-tags: 
+categories: 
 - R
 - Data Analysis
 featured: no

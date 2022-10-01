@@ -1,14 +1,14 @@
 ---
 title: Generating (rectangular) simulated data  
-summary: A brief discussion on generating simulated data.
+description: A brief discussion on generating simulated data.
 author: Andreas Handel
 date: '2022-04-30'
 lastMod: "2022-04-30"
-slug: simulating-rectangular-data
+aliases: \r\n  -  simulating-rectangular-data
 categories: 
 - R
 - Data Analysis
-tags: 
+categories: 
 - R
 - Data Analysis
 featured: no
