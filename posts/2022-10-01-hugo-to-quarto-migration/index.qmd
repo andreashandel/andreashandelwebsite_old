@@ -55,7 +55,7 @@ The main file for setting configurations is the `_quarto.yml` file. Additional c
 
 # Converting YAML sections
 
-I had to do a bunch of manual conversions of all the `index.qmd` files that go with each post and presentation. It was a bit tedious but not too bad. Basically, I had to remove anything from the YAML that was specific for Hugo/Wowchemy and format it to have the fields [supported by Quarto](https://quarto.org/docs/websites/website-blog.html). I found [Danielle's post]() to be helpful for a quick orientation. (Note that she converts from Distill, so her starting point is slightly different, but the new Quarto entries are the same.)
+I had to do a bunch of manual conversions of all the `index.qmd` files that go with each post and presentation. It was a bit tedious but not too bad. Basically, I had to remove anything from the YAML that was specific for Hugo/Wowchemy and format it to have the fields [supported by Quarto](https://quarto.org/docs/websites/website-blog.html). I found [Danielle's post](https://blog.djnavarro.net/posts/2022-04-20_porting-to-quarto/) to be helpful for a quick orientation. (Note that she converts from Distill, so her starting point is slightly different, but the new Quarto entries are the same.)
 
 
 
