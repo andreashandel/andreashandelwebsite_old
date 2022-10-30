@@ -1,8 +1,6 @@
 # Todo
 
-* The talk pages don't display the date and location. Not sure how to fix.
-* Fix logos on project page, update project page.
-* Have talks and blog posts show not just updated date but also creation date.
+* Update this document to reflect move to Quarto.
 
 
 # Notes 
@@ -10,7 +8,7 @@
 ## General
 * Some information that applies to this site and handelgroup is not repeated here, see the handelgroup notes file.
 
-* It seems that qmd sites can't handle the weaving of code with markdown using the read_chunk setup. They ignore eval= FALSE and run stuff anyway. Might need to run those as Rmd files until fixed.
+* It seems that qmd sites can't handle the weaving of code with markdown using the read_chunk setup. They ignore eval=FALSE and run stuff anyway. Might need to run those as Rmd files until fixed.
 
 
 ## Needed R packages
@@ -20,12 +18,12 @@ install.packages(c('cowplot','geosphere','scholar','wordcloud','bibliometrix','t
 
 
 ## Customization
-* Edit config.yaml to update website name and title and uRL, etc.
-* Edit params.yaml to include google analytics, set twitter
+
 
 ## Website Logo
 * Save your icon as a square 512x512 pixel image named icon.png and place the image in your root assets/images/ folder, creating the assets and images folders if they don't already exist. (https://sourcethemes.com/academic/docs/customization/)
 * To show logo on site, place icon/logo in assets/images and/or assets/media
+
 
 ## Rmarkdown vs Rmd
 For math to render properly, one needs to use Rmd files (see e.g. here: https://github.com/wowchemy/wowchemy-hugo-themes/issues/870)
@@ -38,8 +36,8 @@ https://bookdown.org/yihui/blogdown/output-format.html
 
 
 ## To deploy site
-Run build_site(). This command keeps changing, might need to manually build Rmarkdown to markdown.
-push to github. Netlify will automatically build and serve site.
+Run quarto build/publish command.
+No automated building from Github at this point, need to rebuild with quarto, then run quarto command to push updates to Netlify.
 
 
 ## To implement commenting
@@ -49,8 +47,8 @@ https://masalmon.eu/2019/10/02/disqus/
 https://www.davidfong.info/post/hugoacademiccommentswithutterances/
 
 
+
 ## Change footer
-add custom footer site_footer.html to layouts/partials folder
 
 
 
@@ -61,6 +59,9 @@ add custom footer site_footer.html to layouts/partials folder
 ### Science/Research
 
 * Reading/managing/publishing papers: turn my presentation and my text on the 'teaching-research-resources' list into a blog post.
+
+Blog post discussing stats vs mechanistic models and non-parametric vs parametric (how they are somewhat similar, one trades off power for assumptions). Almost like a bias variance trade-off.
+
 
 
 ### Teaching/Tech
@@ -77,6 +78,7 @@ Review of my technology stack for online courses
 * conceptual thought of usefulness of certain teaching aids like metaphors/examples/jokes that might confuse-enlighten or disengage-engage
 
 * quizgrader description
+
 
 ### Others
 
