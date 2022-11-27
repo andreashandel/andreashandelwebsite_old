@@ -11,7 +11,7 @@
     "href": "index.html",
     "title": "Andreas Handel",
     "section": "",
-    "text": "I am a Professor in the Department of Epidemiology and Biostatistics, College of Public Health, at the University of Georgia (UGA).\nMy research and teaching focus on data analysis and modeling of infectious diseases.\nThis website contains a short bio and products such as blog posts, presentations, and various tools and resources related to teaching and research.\nMore research related details can be found on my research group site. Some overlap between the two sites might occur.\nI send out a monthly (or less frequent) newsletter with updates and musings on my various projects. If interested, you can subscribe here."
+    "text": "I am a Professor in the Department of Epidemiology and Biostatistics, College of Public Health, at the University of Georgia (UGA).\nMy research and teaching focus on data analysis and modeling of infectious diseases.\nThis website contains a short bio and products such as blog posts, presentations, and various tools and resources related to teaching and research.\nMore research related details can be found on my research group site. Some overlap between the two sites might occur."
   },
   {
     "objectID": "posts.html",
@@ -642,13 +642,6 @@
     "title": "COVID-19 tracker",
     "section": "",
     "text": "An R/Shiny app that visualizes COVID-19 cases, hospitalizations, deaths and tests for US states and counties, as well as countries around the world. This app was created by William Norfolk, Robbie Richards and Andreas Handel. Check out the app here. The About section of the app contains more information."
-  },
-  {
-    "objectID": "subscribe.html",
-    "href": "subscribe.html",
-    "title": "My monthly (or less frequent) newsletter",
-    "section": "",
-    "text": "I send a newsletter at most once a month, on the first Monday of the month (or around that time 😁). If there are months where I didn’t create anything worth sharing, there is no newsletter. So if you subscribe to this newsletter, you’ll receive 12 or less emails from me per year.\nThe newsletter currently consists of 3 - generally brief - sections. I describe things I created, i.e. new blog posts, presentations, and R package developments; I talk about things (generally books) I consumed that are possibly worth sharing; and at times I share some assorted thoughts on topics broadly related to my work.\nSo if you are interested in getting – very infrequent – emails from me announcing new creations, go ahead and subscribe by entering your email address here:\n\n\n\n\n    \n        \n        \n        * indicates required\n\n    Email Address  *\n\n    \n    \n\n\n    First Name \n    \n    \n\n\n    Last Name \n    \n    \n\n    \n        \n        \n        \n    \n        \n            \n                \n                \n            \n        \n    \n\n\n\n\nYou might receive an email to confirm that you really want to subscribe. Don’t forget to confirm (unless you changed your mind). And of course you can unsubscribe at any time.\nIt goes without saying (but I say it anyway 😃) that I won’t use your email for any other purpose. I use MailChimp for this. I assume they know how to keep their servers safe so your email doesn’t get leaked. (And if it did, would it matter? Aren’t all our email addresses already on a million spam lists anyway? 🤷 I’ve given up trying to fight it - fortunately most spam filters are pretty good these days.)"
   },
   {
     "objectID": "posts/2022-02-22-longitudinal-multilevel-bayes-1/index.html",

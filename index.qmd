@@ -10,18 +10,21 @@ about:
     - icon: github
       text: Github
       href: https://github.com/andreashandel
-    - icon: twitter
-      text: Twitter
-      href: https://twitter.com/andreashandel
+    # - icon: twitter
+    #   text: Twitter
+    #   href: https://twitter.com/andreashandel
+    - icon: mastodon
+      text: Mastodon
+      href: https://fediscience.org/@andreashandel
     - icon: linkedin
       text: LinkedIn
       href: https://www.linkedin.com/in/andreashandel/
     - icon: google-scholar
       text: Google Scholar
       href: https://scholar.google.com/citations?user=bruHK0YAAAAJ&hl=en
-    - icon: impactstory
-      text: ImpactStory
-      href: https://impactstory.org/u/0000-0002-4622-1146
+    # - icon: impactstory
+    #   text: ImpactStory
+    #   href: https://impactstory.org/u/0000-0002-4622-1146
     - icon: orcid
       text: ORCID
       href: https://orcid.org/0000-0002-4622-1146
@@ -46,4 +49,4 @@ This website contains [a short bio](about.qmd) and products such as [blog posts]
 
 More research related details can be found [on my research group site](https://handelgroup.uga.edu/). Some overlap between the two sites might occur.
 
-I send out a monthly (or less frequent) newsletter with updates and musings on my various projects. If interested, [you can subscribe here.](subscribe.html)
+<!-- I send out a monthly (or less frequent) newsletter with updates and musings on my various projects. If interested, [you can subscribe here.](subscribe.html) -->

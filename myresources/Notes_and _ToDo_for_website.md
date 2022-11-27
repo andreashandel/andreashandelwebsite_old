@@ -1,7 +1,7 @@
 # Todo
 
 * Update this document to reflect move to Quarto.
-
+* Fix logos on project page
 
 # Notes 
 
@@ -36,7 +36,12 @@ https://bookdown.org/yihui/blogdown/output-format.html
 
 
 ## To deploy site
-Run quarto build/publish command.
+Run this quarto build/publish command on console:
+
+quarto publish netlify
+
+This should automatically try to connect to Netlify and publish.
+
 No automated building from Github at this point, need to rebuild with quarto, then run quarto command to push updates to Netlify.
 
 

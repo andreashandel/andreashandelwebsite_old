@@ -43,8 +43,8 @@ website:
         file: presentations.qmd
       - text: "Projects"
         file: projects.qmd
-      - text: "Subscribe"
-        file: subscribe.qmd
+      # - text: "Subscribe"
+      #   file: subscribe.qmd
   
 
 
