@@ -4,10 +4,7 @@ abstract: An introductory workshop on Infectious Diseases, Immunology and Within
 event: 2019 Summer Institute in Statistics and Modeling in Infectious Diseases (SISMID)
 location: Seattle, US
 date: "2019-07-17"
-  
 image: featured.png
-categories:
-- talk
 categories:
 - Teaching
 - Infectious Disease

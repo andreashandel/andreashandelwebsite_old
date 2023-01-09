@@ -126,7 +126,7 @@ We define some general values for the fitting. Since the starting values depend 
 We'll again set starting values, as we did for `ulam/rethinking`. 
 Note that `brms` needs them in a somewhat different form, namely as list of lists for each model, one list for each chain.
 
-I set different values for each chain, so I can check that each chain ends up at the same posterior. This is inspired by [this post by Solomon Kurz](https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/), though I keep it simpler and just use the `jitter` function.
+I set different values for each chain, so I can check that each chain ends up at the same posterior. This is inspired by [this post by Solomon Kurz](https://solomonkurz.netlify.app/blog/2021-06-05-don-t-forget-your-inits/), though I keep it simpler and just use the `jitter` function.
 
 Note that this approach not only jitters (adds noise/variation) between chains, but also between the individual-level parameters for each chain. That's fine for our purpose, it might even be beneficial.
 

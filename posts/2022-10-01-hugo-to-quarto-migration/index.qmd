@@ -73,7 +73,10 @@ To prevent comments on certain pages, one can turn those off in the YAML, also a
 
 # HTML form embedding
 
-For my [newsletter subscription](/subscribe.html) page, I embed HTML code produced by Mailchimp. It took me a little bit to figure out how to do it.
+**Update 2023-01-09:** At the end of 2022, I decided to stop doing my newsletter for the time being and turned off the newsletter subscription section.
+Leaving this here since it might still be of general interest to figure out how to embed HTML.
+
+For my newsletter subscription page, I embed HTML code produced by Mailchimp. It took me a little bit to figure out how to do it.
 [This tip](https://mine-cetinkaya-rundel.github.io/quarto-tip-a-day/posts/12-html-block/) explained it, basically the setup looks like this:
 
 

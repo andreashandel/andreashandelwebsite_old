@@ -33,6 +33,9 @@ https://github.com/rstudio/blogdown/issues/530
 https://masalmon.eu/2020/02/29/hugo-maintenance/
 https://bookdown.org/yihui/blogdown/output-format.html
 
+## Redirects
+
+
 
 
 ## To deploy site
