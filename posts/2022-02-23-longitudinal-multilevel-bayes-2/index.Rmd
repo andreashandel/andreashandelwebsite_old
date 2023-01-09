@@ -123,7 +123,7 @@ Any fitting routine needs to start with some parameter values and then from ther
 
 Note that we only specify values for the parameters that are directly estimated. Parameters that are built from other parameters (e.g. $\alpha$ and $\beta$) are computed and don't need starting values.
 
-For some more detailed discussion on starting values, see for instance [this post by Solomon Kurz](https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/). He uses `brms` in his example, but the same idea applies with any package/fitting routine. He also explains that it is a good idea to set different starting values for each chain. I am not sure if/how this could be done with `rethinking`, it seems `ulam` does not support this? But it can be done for `brms` (and I'm doing it there).
+For some more detailed discussion on starting values, see for instance [this post by Solomon Kurz](https://solomonkurz.netlify.app/blog/2021-06-05-don-t-forget-your-inits/). He uses `brms` in his example, but the same idea applies with any package/fitting routine. He also explains that it is a good idea to set different starting values for each chain. I am not sure if/how this could be done with `rethinking`, it seems `ulam` does not support this? But it can be done for `brms` (and I'm doing it there).
 
 ## Model fitting
 
