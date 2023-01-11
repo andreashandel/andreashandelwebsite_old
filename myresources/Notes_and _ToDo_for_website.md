@@ -68,9 +68,13 @@ https://www.davidfong.info/post/hugoacademiccommentswithutterances/
 
 * Reading/managing/publishing papers: turn my presentation and my text on the 'teaching-research-resources' list into a blog post.
 
-Blog post discussing stats vs mechanistic models and non-parametric vs parametric (how they are somewhat similar, one trades off power for assumptions). Almost like a bias variance trade-off.
+* Blog post discussing stats vs mechanistic models and non-parametric vs parametric (how they are somewhat similar, one trades off power for assumptions). Almost like a bias variance trade-off.
 
+* How to approach your first (and every subsequent) research project – use text I wrote for ‘onboarding’. Also combine with research project slides/talk.
 
+*	Post Writing a scientific article with R/Quarto/etc.
+
+*	Turn some presentations, e.g. ‘good research project’ into blog posts.
 
 ### Teaching/Tech
 
@@ -92,4 +96,10 @@ Review of my technology stack for online courses
 
 * See "started blog posts": staying mentally in good shape in grad school (and in general). comparing mental exercise/meditation to physical exercise, where do analogies work and where do they not.
 
-* epidemiological biases and "learn from experts" literature (e.g. tim ferriss books)
+* epidemiological biases and "learn from experts" literature (e.g. tim ferriss books): Use/consume/learn from folks in Tim Ferriss blog and similar, while knowing the huge impact of survivor bias and non-random sampling. (Example: Jim Collins wisdom on Tim Ferriss show and his likely poor analysis (The Model Thinker, p 162)
+
+* Fully implement, then write about book review system: Excel - rmarkdown/blogdown
+
+* Blog on ‘not reconciling differences’, e.g., Use/insist on the best (statistical) methodology possible, while knowing/appreciating that it often doesn’t matter.
+
+* Impact/usefulness of different activities (research/teaching/outreach/mentoring, etc.)
