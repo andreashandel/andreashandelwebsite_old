@@ -34,7 +34,8 @@ https://masalmon.eu/2020/02/29/hugo-maintenance/
 https://bookdown.org/yihui/blogdown/output-format.html
 
 ## Redirects
-
+Follow the instructions in my Hugo -> Quarto conversion blog post. Make sure Quarto doesn't delete the `_redirects` file from the `_site` folder.
+Quarto seems to delete the whole `_site` folder if one renders everything, so should be avoided. Instead, do the quarto publish netlify approach, which will render as needed and preserve the redirect.
 
 
 
