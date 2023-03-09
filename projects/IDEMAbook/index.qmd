@@ -4,10 +4,10 @@ description: "An online book (perpetually under construction) covering infectiou
 image: featured.png
 image-alt: IDEMA book logo
 categories:
-  - Textbook
-  - Infectious Disease
   - Teaching
+  - Infectious Disease
   - Modeling
+  - Textbook
 about:
   template: solana
   image: featured.png

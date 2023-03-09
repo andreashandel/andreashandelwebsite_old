@@ -2,8 +2,9 @@
 title: "Projects"
 listing:
   contents: projects
-  sort: "title desc"
+  sort: "title"
   type: grid
+  image-height: 260px
   categories: true
   sort-ui: true
   filter-ui: true

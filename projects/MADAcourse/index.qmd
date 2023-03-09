@@ -5,9 +5,9 @@ author: Andreas Handel
 image: featured.png
 image-alt: MADA course logo
 categories:
-  - Course
-  - Data Analysis
   - Teaching
+  - Data Analysis
+  - Course
 about:
   template: solana
   image: featured.png

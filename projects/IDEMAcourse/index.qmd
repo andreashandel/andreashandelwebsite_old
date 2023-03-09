@@ -4,10 +4,10 @@ description: "Complete materials of an online course on infectious disease epide
 image: featured.png
 image-alt: IDEMA course logo
 categories:
-  - Course
-  - Infectious Disease
   - Teaching
+  - Infectious Disease
   - Modeling
+  - Course
 about:
   template: solana
   image: featured.png

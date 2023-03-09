@@ -1,15 +1,14 @@
 ---
 title: "DSAIRM - Dynamical Systems Approach to Immune Response Modeling"
-date: 2020-10-01
 description: "R package that teaches modeling for within-host infection and immunology."
 image: featured.png
 image-alt: DSAIRM logo
 categories:
-  - R Package
-  - Infectious Disease
-  - Modeling
-  - Immunology
   - Teaching
+  - Infectious Disease
+  - Immunology
+  - Modeling
+  - R Package
 about:
   template: solana
   image: featured.png

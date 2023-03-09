@@ -4,10 +4,11 @@ description: "Materials of an online course on simulation modeling in immunology
 image: featured.png
 image-alt: SMI logo
 categories:
-  - Course
   - Teaching
+  - Infectious Disease
   - Immunology
   - Modeling
+  - Course
 about:
   template: solana
   image: featured.png
