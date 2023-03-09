@@ -37,6 +37,7 @@ https://bookdown.org/yihui/blogdown/output-format.html
 Follow the instructions in my Hugo -> Quarto conversion blog post. Make sure Quarto doesn't delete the `_redirects` file from the `_site` folder.
 Quarto seems to delete the whole `_site` folder if one renders everything, so should be avoided. Instead, do the quarto publish netlify approach, which will render as needed and preserve the redirect.
 
+IMPORTANT UPDATE: Even quarto publish netlify now seems to delete the `_redirects`. To get them back and created, I need to fake-change the index.qmd file so the 'freeze' command is ignored and stuff gets run.
 
 
 ## To deploy site
