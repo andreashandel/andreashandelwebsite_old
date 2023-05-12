@@ -8,11 +8,10 @@ date: "2022-04-21"
 image: featured.png
 image-alt: Norovirus antibody kinetics
 categories:
-
-- Research
-- Inoculum Dose
-- Norovirus
-- Influenza
+  - Research
+  - Inoculum Dose
+  - Norovirus
+  - Influenza
 ---
 
 <a href="2022_04_York_seminar.html" target="_blank">These are the slides</a> for a presentation I gave at York University.

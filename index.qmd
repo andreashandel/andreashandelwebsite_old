@@ -37,7 +37,6 @@ comments: false
 redirects <- paste0("/talk /presentations \n/talks /presentations \n/post /posts")
 # write the _redirect file
 writeLines(redirects, here::here("_site", "_redirects"))
-
 ```
 
 

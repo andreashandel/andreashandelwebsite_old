@@ -1,6 +1,7 @@
 {
   "listing": "/404.html",
   "items": [
+    "/presentations/2023-05-CIVR/index.html",
     "/presentations/2023-01-academia-vs-industry/index.html",
     "/presentations/2023-01-idp/index.html",
     "/posts/2022-10-01-hugo-to-quarto-migration/index.html",

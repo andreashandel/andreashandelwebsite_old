@@ -16,6 +16,7 @@ This is a hopefully complete list of all R packages needed to recompile all the 
 
 install.packages(c('cowplot','geosphere','scholar','wordcloud','bibliometrix','tidytext','visdat','kableExtra','janitor','ggplot2','dplyr','stringr','tidytuesdayR','readr','emoji',"rethinking","cmdstanr","brms"))
 
+remotes::install_github('rmcelreath/rethinking')
 
 ## Customization
 
