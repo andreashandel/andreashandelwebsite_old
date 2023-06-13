@@ -8,15 +8,8 @@ aliases: \r\n  -  generating-using-data
 categories: 
 - R
 - Data Analysis
-categories: 
-- R
-- Data Analysis
 - Bayesian
 featured: no
-image:
-  caption: ''
-  focal_point: ''
-  preview_only: no
 ---
 
 

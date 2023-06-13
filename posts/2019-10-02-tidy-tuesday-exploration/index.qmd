@@ -144,9 +144,9 @@ I think that can be done with plotly, let's google it.
 Ok, figured it out. This re-creates the 3 scatterplots from above and when one moves over the dots, it shows restaurant name.
 
 ```{r plot-2, warning=FALSE}
-plot_ly(d2, x = ~comm_score, y = ~crit_score, text = ~paste('Restaurant: ', name))
-plot_ly(d2, x = ~comm_score, y = ~dave_score, text = ~paste('Restaurant: ', name))
-plot_ly(d2, x = ~crit_score, y = ~dave_score, text = ~paste('Restaurant: ', name))
+plotly::plot_ly(d2, x = ~comm_score, y = ~crit_score, type = "scatter", text = ~paste('Restaurant: ', name))
+plotly::plot_ly(d2, x = ~comm_score, y = ~dave_score, type = "scatter", text = ~paste('Restaurant: ', name))
+plotly::plot_ly(d2, x = ~crit_score, y = ~dave_score, type = "scatter", text = ~paste('Restaurant: ', name))
 ```
 
 So apparently the lousy restaurant that got a 1 from the community and almost 0 from Dave is called *Amtrak*. I'm wondering if that refers to pizza on Amtrak trains? Just for the heck of it and because I'm curious, let's look at that entry.

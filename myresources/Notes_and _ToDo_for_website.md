@@ -12,13 +12,13 @@
 
 
 ## Needed R packages
-This is a hopefully complete list of all R packages needed to recompile all the posts of the website:
+
+We use renv to manage the packages needed. It usually finds automatically what is needed. As a backup, this is a hopefully complete list of all R packages needed to recompile all the posts of the website:
 
 install.packages(c('cowplot','geosphere','scholar','wordcloud','bibliometrix','tidytext','visdat','kableExtra','janitor','ggplot2','dplyr','stringr','tidytuesdayR','readr','emoji',"rethinking","cmdstanr","brms"))
 
 remotes::install_github('rmcelreath/rethinking')
-
-## Customization
+remotes::install_github('andreashandel/flowdiagramr')
 
 
 ## Website Logo
