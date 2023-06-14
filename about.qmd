@@ -7,6 +7,7 @@ comments: false
 
 ### Current position
 
+
 I started my faculty career in 2009 as Assistant Professor in the [Department of Epidemiology and Biostatistics](http://www.publichealth.uga.edu/epibio/),
 [College of Public Health](http://www.publichealth.uga.edu/), at the [University of Georgia (UGA)](http://www.uga.edu/). I am currently (full) Professor and Associate Department Head. 
 
@@ -16,7 +17,7 @@ I have adjunct appointments in UGA's [School of Ecology](https://www.ecology.uga
 
 ### Research focus
 
-I work on data analytics and modeling of infectious diseases, mainly influenza, tuberculosis and norovirus. Lately, I have also worked a lot on COVID-19. I uses mathematical models, computational simulations and statistical analysis to understand the dynamics of pathogens on different spatial and temporal scales. I work both on the within-host level (the immunology, virology, microbiology scale) and the population level (the epidemiology, ecology, evolution scale). The ultimate goal of my work is to help design better intervention and control strategies against infectious diseases, both for individual patients and on the population level.
+I work on data analytics and modeling of infectious diseases. My main focus is influenza, with some other work on a variety of pathogens such as SARS-CoV-2, norovirus, tuberculosis, and others. I uses mathematical models, computational simulations and statistical analysis to understand the dynamics of pathogens on different spatial and temporal scales. I work both on the within-host level (the immunology, virology, microbiology scale) and the population level (the epidemiology, ecology, evolution scale). The ultimate goal of my work is to help design better intervention and control strategies against infectious diseases, both for individual patients and on the population level.
 
 Descriptions of some current research projects can be found [on my research group website](https://handelgroup.uga.edu/). Slides for recent talks and presentations are located on this website and [can be found here](https://www.andreashandel.com/presentations/).
 

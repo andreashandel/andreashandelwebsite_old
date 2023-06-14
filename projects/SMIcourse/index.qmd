@@ -5,10 +5,9 @@ image: featured.png
 image-alt: SMI logo
 categories:
   - Teaching
+  - Course
   - Infectious Disease
   - Immunology
-  - Modeling
-  - Course
 about:
   template: solana
   image: featured.png

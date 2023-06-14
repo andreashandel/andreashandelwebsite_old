@@ -6,8 +6,8 @@ image: featured.png
 image-alt: MADA course logo
 categories:
   - Teaching
-  - Data Analysis
   - Course
+  - Data Analysis
 about:
   template: solana
   image: featured.png

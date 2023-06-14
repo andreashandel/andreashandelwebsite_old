@@ -5,9 +5,9 @@ image: featured.png
 image-alt: IDEMA course logo
 categories:
   - Teaching
-  - Infectious Disease
-  - Modeling
   - Course
+  - Infectious Disease
+  - Epidemiology
 about:
   template: solana
   image: featured.png

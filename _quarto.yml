@@ -51,20 +51,20 @@ website:
 
   page-footer:
     left: |
-      {{< fa regular copyright >}} Andreas Handel, 2022<br>
+      {{< fa regular copyright >}} Andreas Handel, 2023<br>
       All content licensed under {{< fa brands creative-commons >}}
-      {{< fa brands creative-commons-by >}} {{< fa brands creative-commons-sa >}} {{< fa brands creative-commons-nc >}} [(CC BY-NC-SA 4.0)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
+      {{< fa brands creative-commons-by >}} {{< fa brands creative-commons-sa >}} {{< fa brands creative-commons-nc >}} [(CC BY-NC-SA 4.0)](http://creativecommons.org/licenses/by-nc-sa/4.0/)<br>
+      Opinions are my own and do not represent my employer
       
     right: |
       Made with {{< fa brands r-project >}} and [Quarto](https://quarto.org/)<br>
-      Inspiration and code snippets taken from [these folks.](/posts/quarto-website-migration.html)<br>
+      Inspiration and code snippets taken from [these folks](/posts/quarto-website-migration.html)<br>
       [Source at {{< fa brands github >}} GitHub](https://github.com/andreashandel/andreashandelwebsite)
 
 
 format:
   html:
     theme: 
-      light: matria
-      dark: slate
-    css: customstyle.css 
+      light: [matria,customstyle.scss]
+      dark: [slate,customstyle.scss]
     toc: true

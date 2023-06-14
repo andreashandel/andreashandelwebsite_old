@@ -5,9 +5,9 @@ image: featured.png
 image-alt: IDEMA book logo
 categories:
   - Teaching
-  - Infectious Disease
-  - Modeling
   - Textbook
+  - Infectious Disease
+  - Epidemiology
 about:
   template: solana
   image: featured.png
