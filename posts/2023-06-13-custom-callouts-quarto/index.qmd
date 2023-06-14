@@ -10,7 +10,7 @@ categories:
   - Website
   - CSS
 image: "goal.png"
-image-alt: "[Goal post icons created by nawicon - Flaticon](https://www.flaticon.com/free-icons/goal-post)"
+image-alt: "An icon representing a goal"
 execute:
   echo: false
 engine: knitr
@@ -91,7 +91,7 @@ The next code block sets up the header/title section.
 
 Note that I needed to round the background box in the top right corner so it has the same shape as the overall box/border defined above.
 
-I'm also including a small icon here, following the blog post instructions by Desirée mentioned above. I got the icon from [Flaticon](https://www.flaticon.com/free-icons/goal-post). Depending on where you place the icon, you will have to adjust the file path inside the `url()` command.
+I'm also including a small icon here, following the blog post instructions by Desirée mentioned above. I got the icon [from here](https://uxwing.com/). Depending on where you place the icon, you will have to adjust the file path inside the `url()` command.
 
 
 

@@ -14,11 +14,9 @@ project:
   preview:
     port: 4321
     browser: true
-
 execute:
   # Re-render only when source changes
   freeze: auto
-
 description-meta: "Andreas Handel's personal website."
 
 website:
