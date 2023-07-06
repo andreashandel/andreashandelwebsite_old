@@ -38,7 +38,10 @@ $$
 Y = a + \color{blue}{bX}
 $$
 
+
 ## Websites
+
+To make sure inline `R` code is run on Quarto documents that don't contain other code chunks, one needs to set `engine: knitr` explicitly.
 
 
 

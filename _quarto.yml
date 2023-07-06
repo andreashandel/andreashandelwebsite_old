@@ -11,6 +11,8 @@ project:
     - "!certificate*"
   resources:
     - "files/"
+  post-render:
+    - makeredirects.R
   preview:
     port: 4321
     browser: true

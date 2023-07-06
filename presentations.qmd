@@ -7,6 +7,15 @@ listing:
   categories: true
   sort-ui: true
   filter-ui: true
+  fields:
+    - date
+    - title
+    - subtitle
+    - location
+    - event
+    - image
+    - image-alt
+    - categories
 page-layout: full
 title-block-banner: false
 ---

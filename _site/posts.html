@@ -77,7 +77,7 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-reading-time','listing-title','listing-description','listing-image','listing-image-alt','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
       searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description","listing-categories"],
     };
@@ -229,9 +229,6 @@ cookieconsent.run({
          <option value="listing-date-sort" data-direction="desc">
           Date - Newest
         </option>
-         <option value="listing-author" data-direction="asc">
-          Author
-        </option>
      </select>
   </div>
     <div class="input-group input-group-sm quarto-listing-filter">
@@ -275,13 +272,13 @@ CSS
 <div class="listing-date">
 Oct 1, 2023
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+6 min
 </div>
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="Quarto,Hugo,Website" data-listing-date-sort="1664596800000" data-listing-file-modified-sort="1688670898444" data-listing-date-modified-sort="1688616000000" data-listing-reading-time-sort="11">
+<div class="quarto-post image-right" data-index="1" data-categories="Quarto,Hugo,Website" data-listing-date-sort="1664596800000" data-listing-file-modified-sort="1688680845783" data-listing-date-modified-sort="1688616000000" data-listing-reading-time-sort="11">
 <div class="thumbnail">
 <p><a href="./posts/2022-10-01-hugo-to-quarto-migration/index.html"> <img src="./posts/2022-10-01-hugo-to-quarto-migration/featured.png" class="thumbnail-image"> </a></p>
 </div>
@@ -316,8 +313,8 @@ Website
 <div class="listing-date">
 Oct 1, 2022
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+11 min
 </div>
 </a>
 </div>
@@ -354,8 +351,8 @@ Visualization
 <div class="listing-date">
 Jun 11, 2022
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+6 min
 </div>
 </a>
 </div>
@@ -395,8 +392,8 @@ Bayesian
 <div class="listing-date">
 Feb 25, 2022
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+18 min
 </div>
 </a>
 </div>
@@ -436,8 +433,8 @@ Bayesian
 <div class="listing-date">
 Feb 24, 2022
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+18 min
 </div>
 </a>
 </div>
@@ -477,8 +474,8 @@ Bayesian
 <div class="listing-date">
 Feb 23, 2022
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+25 min
 </div>
 </a>
 </div>
@@ -518,8 +515,8 @@ Bayesian
 <div class="listing-date">
 Feb 22, 2022
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+35 min
 </div>
 </a>
 </div>
@@ -559,8 +556,8 @@ Tidy Tuesday
 <div class="listing-date">
 Sep 30, 2021
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+8 min
 </div>
 </a>
 </div>
@@ -603,10 +600,10 @@ distill
 <div class="listing-date">
 Mar 21, 2021
 </div>
-</a><div class="listing-author"><a href="./posts/2021-03-21-simple-distill-website/index.html">
-</a><a href="https://www.andreashandel.com">Andreas Handel</a>
+<div class="listing-reading-time">
+18 min
 </div>
-
+</a>
 </div>
 </div>
 <div class="quarto-post image-right" data-index="9" data-categories="R Markdown,GitHub,Website,Tutorial" data-listing-date-sort="1610341200000" data-listing-file-modified-sort="1664568134497" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="18">
@@ -647,10 +644,10 @@ Tutorial
 <div class="listing-date">
 Jan 11, 2021
 </div>
-</a><div class="listing-author"><a href="./posts/2021-01-11-simple-github-website/index.html">
-</a><a href="https://www.andreashandel.com">Andreas Handel</a>
+<div class="listing-reading-time">
+18 min
 </div>
-
+</a>
 </div>
 </div>
 <div class="quarto-post image-right" data-index="10" data-categories="Tutorial,R Markdown" data-listing-date-sort="1602734400000" data-listing-file-modified-sort="1664574739535" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6">
@@ -685,10 +682,10 @@ R Markdown
 <div class="listing-date">
 Oct 15, 2020
 </div>
-</a><div class="listing-author"><a href="./posts/2020-10-15-customized-documents-with-Rmarkdown/index.html">
-</a><a href="https://www.andreashandel.com">Andreas Handel</a>
+<div class="listing-reading-time">
+6 min
 </div>
-
+</a>
 </div>
 </div>
 <div class="quarto-post image-right" data-index="11" data-categories="R,R Markdown,Word,Tutorial" data-listing-date-sort="1602043200000" data-listing-file-modified-sort="1664574718236" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4">
@@ -729,8 +726,8 @@ Tutorial
 <div class="listing-date">
 Oct 7, 2020
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+4 min
 </div>
 </a>
 </div>
@@ -767,8 +764,8 @@ Grant Writing
 <div class="listing-date">
 May 29, 2020
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+4 min
 </div>
 </a>
 </div>
@@ -808,8 +805,8 @@ bibliometrics
 <div class="listing-date">
 Feb 2, 2020
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+6 min
 </div>
 </a>
 </div>
@@ -849,8 +846,8 @@ bibliometrics
 <div class="listing-date">
 Feb 1, 2020
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+7 min
 </div>
 </a>
 </div>
@@ -896,8 +893,8 @@ Website
 <div class="listing-date">
 Jan 20, 2020
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+7 min
 </div>
 </a>
 </div>
@@ -943,8 +940,8 @@ Website
 <div class="listing-date">
 Jan 19, 2020
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+19 min
 </div>
 </a>
 </div>
@@ -981,8 +978,8 @@ Research
 <div class="listing-date">
 Jan 8, 2020
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+1 min
 </div>
 </a>
 </div>
@@ -1022,8 +1019,8 @@ Teaching
 <div class="listing-date">
 Oct 23, 2019
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+9 min
 </div>
 </a>
 </div>
@@ -1063,8 +1060,8 @@ Tidy Tuesday
 <div class="listing-date">
 Oct 12, 2019
 </div>
-<div class="listing-author">
-Andreas Handel
+<div class="listing-reading-time">
+13 min
 </div>
 </a>
 </div>

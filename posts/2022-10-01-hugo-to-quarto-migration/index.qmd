@@ -134,7 +134,16 @@ After I got the `aliases` bit to work, I realized that I needd further redirects
 
 I followed her instructions of placing this bit of code into the main `index.qmd` file.
 
-**Update 2023-07-06:** I noticed that sometimes when I build the website, the whole `_site` folder gets erased and rebuilt. But the `index.qmd` file might not get re-executed since I'm using the `execute: freeze` option in my `_quarto.yml` file to prevent running everything each time. The kind of hacky solution I've found is to pretend-edit the main `index.qmd` file, this way `Quarto` always re-executes it and produces the re-direct file. Or alternatively, run the code snippet inside `index.qmd` manually. Not a great solution, happy to learn something more robust if anyone is aware of a better way.
+**Update 2023-07-06:** 
+I noticed that sometimes when I build the website, the whole `_site` folder gets erased and rebuilt (which also deletes the `_redirects` file). But the `index.qmd` file might not get re-executed since I'm using the `execute: freeze` option in my `_quarto.yml` file to prevent running everything each time. This means the code snippet inside `index.qmd` which makes the `_redirects` file isn't run. The solution I found was to use Quarto's [Post-render functionality](https://quarto.org/docs/projects/scripts.html). Basically I placed the few lines of code that I got from Danielle's example into a separate `makeredirects.R` script and added that to the main `_quarto.yml` file as
+
+```markdown
+project:
+  post-render:
+    - makeredirects.R
+```
+It now runs each time after the rendering and produces the needed redirect file.
+
 
 
 # Widgets
