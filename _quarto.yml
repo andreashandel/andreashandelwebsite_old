@@ -14,10 +14,12 @@ project:
   preview:
     port: 4321
     browser: true
+    watch-inputs: false
 execute:
   # Re-render only when source changes
   freeze: auto
 description-meta: "Andreas Handel's personal website."
+engine: knitr
 
 website:
   title: "Andreas Handel"
