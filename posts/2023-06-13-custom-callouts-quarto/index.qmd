@@ -1,6 +1,6 @@
 ---
 title: How to make custom callouts for Quarto    
-description: A brief tutorial on implementing callout style layouts in Quarto for those with basic CSS/HTML skills like myself.
+description: A brief tutorial on implementing callout style layouts in Quarto for those with rudimentary CSS/HTML skills like myself.
 author: Andreas Handel
 date: '2023-06-13'
 aliases: 
