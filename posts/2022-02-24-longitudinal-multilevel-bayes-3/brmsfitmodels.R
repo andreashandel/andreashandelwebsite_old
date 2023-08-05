@@ -176,7 +176,8 @@ for (n in 1:length(modellist))
   fl[[n]]$model = names(modellist)[n]
 }
 # saving the results so we can use them later
-filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","brmsfits", ext="Rds")
+filepath = fs::path("C:","Dropbox","datafiles","longitudinalbayes","brmsfits", ext="Rds")
+#filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","brmsfits", ext="Rds")
 saveRDS(fl,filepath)
 
 ## ---- additional-code -------

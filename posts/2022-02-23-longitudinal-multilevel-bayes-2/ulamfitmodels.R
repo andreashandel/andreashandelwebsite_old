@@ -243,7 +243,8 @@ for (n in 1:length(modellist))
 # the file is too large for GitHub
 # thus I am saving here to a local folder
 # adjust accordingly for your setup
-filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
+filepath = fs::path("C:","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
+#filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
 saveRDS(fl,filepath)
 
 
