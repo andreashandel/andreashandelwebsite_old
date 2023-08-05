@@ -148,8 +148,12 @@ plotfunction <- function(fl,fitpred,fitdat)
 
 ## ---- load_dat2 --------
 #loading previously saved fits.
-filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits_dat2", ext="Rds")
-#filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_dat2", ext="Rds")
+filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_dat2", ext="Rds")
+if (!file_exists(filepath))
+{
+  filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits_dat2", ext="Rds")
+}
+
 fl <- readRDS(filepath)
 fitdat <- fl[[1]]$fit@data
 
@@ -179,8 +183,12 @@ plot(plotlist[[2]])
 
 ## ---- load_big --------
 #loading previously saved fits.
-filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits_big", ext="Rds")
-#filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_big", ext="Rds")
+filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_big", ext="Rds")
+if (!file_exists(filepath))
+{
+  filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits_big", ext="Rds")
+}
+
 fl <- readRDS(filepath)
 fitdat <- fl[[1]]$fit@data
 
@@ -252,7 +260,7 @@ plot(plotlist[[2]])
 filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits_cat", ext="Rds")
 if (!file_exists(filepath))
 {
-  filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits_altpos", ext="Rds")
+  filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits_cat", ext="Rds")
 }
 fl <- readRDS(filepath)
 fitdat <- fl[[1]]$fit@data

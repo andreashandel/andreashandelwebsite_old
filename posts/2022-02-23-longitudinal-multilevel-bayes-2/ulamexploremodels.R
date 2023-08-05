@@ -17,8 +17,12 @@ library('fs') #for file path
 # since the file is too large for GitHub
 # it is stored in a local folder
 # adjust accordingly for your setup
-filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
-#filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
+filepath = fs::path("D:","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
+if (!file_exists(filepath))
+{
+  filepath = fs::path("C:","Data","Dropbox","datafiles","longitudinalbayes","ulamfits", ext="Rds")
+}
+
 fl <- readRDS(filepath)
 # also load data file used for fitting
 simdat <- readRDS("simdat.Rds")
