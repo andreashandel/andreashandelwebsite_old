@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.3.0",
+    "Version": "4.3.1",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -447,23 +447,6 @@
         "utils"
       ],
       "Hash": "9fe98599ca456d6552421db0d6772d8f"
-    },
-    "bookdown": {
-      "Package": "bookdown",
-      "Version": "0.34",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "htmltools",
-        "jquerylib",
-        "knitr",
-        "rmarkdown",
-        "tinytex",
-        "xfun",
-        "yaml"
-      ],
-      "Hash": "25e3e995e30c235ea6fcc76677efbe27"
     },
     "boot": {
       "Package": "boot",
